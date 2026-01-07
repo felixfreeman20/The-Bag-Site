@@ -105,11 +105,10 @@
     </div>
 
     <script>
-        // UPDATED CONFIG
         const firebaseConfig = { 
             apiKey: "AIzaSyAFGoJyyvtspQSauHUrWvSBWNF2taGJOYE",
-            databaseURL: "https://thebagsite-default-rtdb.firebaseio.com", // Updated URL
-            projectId: "thebagsite" // Updated ID
+            databaseURL: "https://thebagsite-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            projectId: "thebagsite"
         };
         
         firebase.initializeApp(firebaseConfig);
@@ -150,7 +149,7 @@
             if(items.length > 0) {
                 summary.classList.remove('hidden');
                 list.innerHTML = items.map(i => `<div>${i}</div>`).join('') + ` <div class="opacity-50 mt-2 text-[10px]">+ ${method} ${deliveryFee}฿</div>`;
-                warning.className = snackTotal < 20 ? "mt-4 text-[10px] bg-red-500 text-white inline-block px-3 py-1 rounded-full font-bold uppercase" : "hidden";
+                warning.className = snackTotal < 20 ? "mt-4 text-[10px] bg-red-500 text-white border-none inline-block px-3 py-1 rounded-full font-bold uppercase" : "hidden";
             } else {
                 summary.classList.add('hidden');
             }
