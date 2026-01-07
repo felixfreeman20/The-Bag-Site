@@ -9,40 +9,48 @@
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #e0f7fa; color: #0f172a; text-align: left; }
+        
+        :root { --bg: #e0f7fa; --card: #ffffff; --text: #0f172a; --border: #cffafe; }
+        .dark-mode { --bg: #020617; --card: #0f172a; --text: #f8fafc; --border: #1e293b; }
+
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text); transition: background 0.3s ease; text-align: left; }
+        .bg-card { background-color: var(--card); border-color: var(--border); }
         .blue-gradient { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
         .hidden { display: none; }
-        .sold-out { opacity: 0.4; filter: grayscale(1); pointer-events: none; }
+        .sold-out { opacity: 0.4; filter: grayscale(1); order: 9999; } /* Order ensures they go to bottom */
         #about-sidebar { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); transform: translateX(-100%); }
         #about-sidebar.open { transform: translateX(0); }
-        #inventory-container { max-height: 480px; overflow-y: auto; padding-right: 8px; scrollbar-width: thin; }
+        #inventory-container { max-height: 480px; overflow-y: auto; padding-right: 8px; scrollbar-width: thin; display: flex; flex-direction: column; gap: 1rem; }
     </style>
 </head>
 <body class="pb-64 overflow-x-hidden">
 
-    <div id="about-sidebar" class="fixed top-0 left-0 h-full w-80 bg-white z-[600] shadow-2xl p-8 flex flex-col">
-        <button onclick="toggleMenu()" class="text-slate-400 text-sm font-black uppercase tracking-widest mb-10">✕ Close</button>
+    <div id="about-sidebar" class="fixed top-0 left-0 h-full w-80 bg-white z-[600] shadow-2xl p-8 flex flex-col text-slate-900">
+        <button onclick="toggleMenu()" class="text-slate-400 text-sm font-black uppercase tracking-widest mb-10 text-left">✕ Close</button>
         <div class="flex-1">
             <h2 class="text-3xl font-black text-blue-600 italic uppercase mb-6">The Story.</h2>
             <p class="text-slate-600 leading-relaxed mb-6 font-medium text-sm">Founded by Alon and Sean to bridge the gap between hunger and class.</p>
             <div class="space-y-4">
                 <div class="bg-cyan-50 p-4 rounded-2xl border border-cyan-100">
                     <p class="text-[10px] font-black text-cyan-600 uppercase tracking-widest">Founder</p>
-                    <p class="text-lg font-bold text-slate-800">Alon Katz</p>
+                    <p class="text-lg font-bold">Alon Katz</p>
                 </div>
                 <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100">
                     <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Co-Founder</p>
-                    <p class="text-lg font-bold text-slate-800">Sean Raynes</p>
+                    <p class="text-lg font-bold">Sean Raynes</p>
                 </div>
             </div>
         </div>
         <div class="text-[10px] text-slate-300 font-bold uppercase tracking-widest">UCIS Premium Fuel © 2026</div>
     </div>
 
-    <nav id="main-nav" class="bg-white/80 backdrop-blur-md p-4 border-b sticky top-0 z-50 flex items-center px-6">
+    <nav id="main-nav" class="bg-card backdrop-blur-md p-4 border-b sticky top-0 z-50 flex items-center px-6">
         <div class="w-1/3"><button onclick="toggleMenu()" class="inline-flex flex-col gap-1.5 p-2"><div class="w-6 h-0.5 bg-blue-600 rounded-full"></div><div class="w-6 h-0.5 bg-blue-600 rounded-full"></div><div class="w-4 h-0.5 bg-blue-600 rounded-full"></div></button></div>
         <div class="w-1/3 text-center"><h1 class="text-xl font-black text-blue-600 italic uppercase tracking-tighter">The Bag.</h1></div>
-        <div class="w-1/3 text-right"><img src="logo.png" alt="Logo" class="h-10 w-10 object-contain rounded-lg inline-block"></div>
+        <div class="w-1/3 text-right flex items-center justify-end gap-3">
+            <button onclick="toggleDarkMode()" class="p-2 bg-slate-100 dark:bg-slate-800 rounded-xl text-lg" id="dark-toggle">🌙</button>
+            <img src="logo.png" alt="Logo" class="h-10 w-10 object-contain rounded-lg inline-block">
+        </div>
     </nav>
 
     <main class="max-w-2xl mx-auto p-6">
@@ -53,28 +61,28 @@
             </div>
 
             <div id="store-content" class="space-y-6">
-                <section class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-cyan-100">
+                <section class="bg-card p-8 rounded-[2.5rem] shadow-sm border">
                     <h2 class="font-bold text-slate-400 mb-4 uppercase text-[10px] tracking-widest">1. Identity</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input type="text" id="cust-name" placeholder="Full Name" class="bg-slate-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all">
-                        <input type="text" id="cust-grade" placeholder="Grade (e.g. 10B)" class="bg-slate-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                        <input type="text" id="cust-name" placeholder="Full Name" class="bg-slate-500/10 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                        <input type="text" id="cust-grade" placeholder="Grade (e.g. 10B)" class="bg-slate-500/10 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all">
                     </div>
-                    <div class="flex gap-2 p-1 bg-slate-100 rounded-2xl mt-4">
-                        <button onclick="setMethod('Pickup')" id="btn-pickup" class="flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow-sm">Pickup</button>
-                        <button onclick="setMethod('Delivery')" id="btn-delivery" class="flex-1 py-3 rounded-xl font-bold text-sm text-slate-500">Delivery (+15฿)</button>
+                    <div class="flex gap-2 p-1 bg-slate-500/10 rounded-2xl mt-4">
+                        <button onclick="setMethod('Pickup')" id="btn-pickup" class="flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white shadow-sm">Pickup</button>
+                        <button onclick="setMethod('Delivery')" id="btn-delivery" class="flex-1 py-3 rounded-xl font-bold text-sm text-slate-400">Delivery (+15฿)</button>
                     </div>
-                    <div id="loc-container" class="mt-4 hidden"><input type="text" id="cust-loc" placeholder="Room / Area" class="w-full bg-cyan-50 border border-cyan-100 p-4 rounded-2xl outline-none text-sm"></div>
+                    <div id="loc-container" class="mt-4 hidden"><input type="text" id="cust-loc" placeholder="Room / Area" class="w-full bg-slate-500/10 border border-blue-500/20 p-4 rounded-2xl outline-none text-sm"></div>
                 </section>
 
                 <section class="space-y-4">
                     <h2 class="font-bold text-slate-400 uppercase text-[10px] tracking-widest px-2">2. Available Snacks</h2>
-                    <div id="inventory-container" class="grid gap-4"></div>
+                    <div id="inventory-container"></div>
                 </section>
             </div>
         </div>
 
         <div id="receipt-page" class="hidden">
-            <div class="bg-white rounded-[3rem] shadow-2xl overflow-hidden border-4 border-blue-600">
+            <div class="bg-card rounded-[3rem] shadow-2xl overflow-hidden border-4 border-blue-600">
                 <div class="blue-gradient p-10 text-white text-center">
                     <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">✓</div>
                     <h2 class="text-3xl font-black uppercase italic tracking-tighter">Bag Secured!</h2>
@@ -83,13 +91,13 @@
                 <div class="p-8 space-y-6">
                     <div class="flex justify-between items-end border-b pb-6">
                         <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Wait Time</p><p class="text-4xl font-black text-blue-600" id="est-time">--</p></div>
-                        <div class="text-right"><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">To Pay</p><p class="text-4xl font-black text-slate-800" id="receipt-total">0฿</p></div>
+                        <div class="text-right"><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">To Pay</p><p class="text-4xl font-black" id="receipt-total">0฿</p></div>
                     </div>
                     <div class="space-y-4">
-                        <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Items</p><p class="font-bold text-slate-700 text-sm" id="receipt-items"></p></div>
-                        <div class="bg-blue-50 p-5 rounded-3xl border border-blue-100">
+                        <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Items</p><p class="font-bold text-sm" id="receipt-items"></p></div>
+                        <div class="bg-blue-500/10 p-5 rounded-3xl border border-blue-500/20">
                             <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Location</p>
-                            <p class="font-black text-slate-800 italic" id="receipt-location"></p>
+                            <p class="font-black italic" id="receipt-location"></p>
                         </div>
                     </div>
                     <div class="pt-4 text-center">
@@ -100,7 +108,7 @@
         </div>
     </main>
 
-    <div id="bottom-bar" class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl p-8 border-t z-50">
+    <div id="bottom-bar" class="fixed bottom-0 left-0 right-0 bg-card backdrop-blur-xl p-8 border-t z-50">
         <div class="max-w-2xl mx-auto flex justify-between items-center">
             <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Price</p><p class="text-3xl font-black text-blue-600" id="total-display">0 THB</p></div>
             <button onclick="showRules()" class="blue-gradient text-white px-10 py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all">Secure Bag</button>
@@ -108,7 +116,7 @@
     </div>
 
     <div id="rules-modal" class="fixed inset-0 bg-slate-900/60 hidden z-[400] flex items-center justify-center p-6 backdrop-blur-sm">
-        <div class="bg-white p-10 rounded-[3rem] max-w-sm w-full shadow-2xl text-center border-b-8 border-blue-600">
+        <div class="bg-white p-10 rounded-[3rem] max-w-sm w-full shadow-2xl text-center border-b-8 border-blue-600 text-slate-900">
             <h2 class="text-2xl font-black mb-6 uppercase italic text-blue-600">The Rules</h2>
             <ul class="text-slate-500 mb-8 text-sm space-y-4 text-left font-medium italic leading-snug">
                 <li>• Please ensure your cash is ready for immediate collection upon arrival.</li>
@@ -135,7 +143,13 @@
         let cart = {}, stock = {}, method = "Pickup", deliveryFee = 0, activeOrderCount = 0;
 
         function toggleMenu() { document.getElementById('about-sidebar').classList.toggle('open'); }
-        db.ref('orders').on('value', snap => { activeOrderCount = snap.val() ? Object.keys(snap.val()).length : 0; });
+        
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const btn = document.getElementById('dark-toggle');
+            btn.innerText = document.body.classList.contains('dark-mode') ? "☀️" : "🌙";
+        }
+
         db.ref('settings/isOpen').on('value', snap => {
             const open = snap.val();
             document.getElementById('store-content').classList.toggle('hidden', !open);
@@ -145,8 +159,8 @@
 
         function setMethod(m) {
             method = m; deliveryFee = (m === "Delivery") ? 15 : 0;
-            document.getElementById('btn-pickup').className = m === "Pickup" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow-sm" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-500";
-            document.getElementById('btn-delivery').className = m === "Delivery" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow-sm" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-500";
+            document.getElementById('btn-pickup').className = m === "Pickup" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white shadow-sm" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-400";
+            document.getElementById('btn-delivery').className = m === "Delivery" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white shadow-sm" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-400";
             document.getElementById('loc-container').classList.toggle('hidden', m !== 'Delivery');
             updateCartDisplay();
         }
@@ -154,11 +168,30 @@
         db.ref('stock').on('value', snap => { stock = snap.val() || {}; renderInventory(); });
 
         function renderInventory() {
-            const container = document.getElementById('inventory-container'); container.innerHTML = "";
-            for (let id in itemsData) {
+            const container = document.getElementById('inventory-container');
+            container.innerHTML = "";
+            
+            // Convert to array and sort: In-stock items first
+            const sortedItems = Object.keys(itemsData).sort((a, b) => {
+                const stockA = stock[a] || 0;
+                const stockB = stock[b] || 0;
+                if (stockA > 0 && stockB <= 0) return -1;
+                if (stockA <= 0 && stockB > 0) return 1;
+                return 0;
+            });
+
+            sortedItems.forEach(id => {
                 const s = stock[id] || 0;
-                container.innerHTML += `<div class="snack-card bg-white p-6 rounded-[2rem] shadow-sm flex justify-between items-center ${s <= 0 ? 'sold-out' : ''}"><div><h3 class="font-bold text-slate-800 text-lg">${itemsData[id].name}</h3><p class="text-blue-600 font-black">${itemsData[id].price} THB</p></div><div class="flex items-center gap-4 bg-slate-50 p-1.5 rounded-2xl"><button onclick="updateQty('${id}', -1)" class="w-10 h-10 bg-white rounded-xl shadow-sm font-bold">-</button><span id="${id}-qty" class="text-lg font-black w-6 text-center text-blue-600">${cart[id] || 0}</span><button onclick="updateQty('${id}', 1)" class="w-10 h-10 bg-white rounded-xl shadow-sm font-bold" ${s <= (cart[id]||0) ? 'disabled' : ''}>+</button></div></div>`;
-            }
+                container.innerHTML += `
+                    <div class="snack-card bg-card p-6 rounded-[2rem] shadow-sm flex justify-between items-center border ${s <= 0 ? 'sold-out' : ''}">
+                        <div><h3 class="font-bold text-lg">${itemsData[id].name}</h3><p class="text-blue-600 font-black">${itemsData[id].price} THB</p></div>
+                        <div class="flex items-center gap-4 bg-slate-500/10 p-1.5 rounded-2xl">
+                            <button onclick="updateQty('${id}', -1)" class="w-10 h-10 bg-card rounded-xl shadow-sm font-bold border border-blue-500/10">-</button>
+                            <span id="${id}-qty" class="text-lg font-black w-6 text-center text-blue-600">${cart[id] || 0}</span>
+                            <button onclick="updateQty('${id}', 1)" class="w-10 h-10 bg-card rounded-xl shadow-sm font-bold border border-blue-500/10" ${s <= (cart[id]||0) ? 'disabled' : ''}>+</button>
+                        </div>
+                    </div>`;
+            });
         }
 
         function updateQty(id, amt) {
@@ -186,17 +219,15 @@
             for(let id in cart) { if(cart[id] > 0) { itemsArr.push(`${itemsData[id].name} x${cart[id]}`); updates[`/stock/${id}`] = fs[id] - cart[id]; } }
             if(itemsArr.length === 0) return alert("Empty!");
             const finalTotal = updateCartDisplay();
-            const finalLoc = (method === 'Pickup') ? "Falcons Nest" : document.getElementById('cust-loc').value;
-            const order = { name: document.getElementById('cust-name').value, grade: document.getElementById('cust-grade').value, loc: finalLoc, items: itemsArr.join(', '), total: finalTotal, timestamp: Date.now() };
+            const order = { name: document.getElementById('cust-name').value, grade: document.getElementById('cust-grade').value, loc: (method === 'Pickup' ? "Falcons Nest" : document.getElementById('cust-loc').value), items: itemsArr.join(', '), total: finalTotal, timestamp: Date.now() };
             const newRef = await db.ref('orders').push(order); await db.ref().update(updates);
-            let wait = activeOrderCount > 5 ? 9 : (activeOrderCount > 2 ? 6 : (activeOrderCount > 0 ? 4 : 2));
             document.getElementById('order-flow').classList.add('hidden'); document.getElementById('bottom-bar').classList.add('hidden');
             document.getElementById('rules-modal').classList.add('hidden'); document.getElementById('main-nav').classList.add('hidden');
             document.getElementById('receipt-id').innerText = "ID: #" + newRef.key.slice(-4).toUpperCase();
             document.getElementById('receipt-total').innerText = finalTotal + "฿";
             document.getElementById('receipt-items').innerText = itemsArr.join(', ');
-            document.getElementById('receipt-location').innerText = finalLoc;
-            document.getElementById('est-time').innerText = wait + " mins";
+            document.getElementById('receipt-location').innerText = order.loc;
+            document.getElementById('est-time').innerText = "5-10 mins";
             document.getElementById('receipt-page').classList.remove('hidden');
             window.scrollTo(0,0);
         }
