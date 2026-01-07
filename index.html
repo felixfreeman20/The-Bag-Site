@@ -66,7 +66,10 @@
             </div>
             
             <div class="flex gap-2 p-1 bg-slate-100 rounded-2xl mt-4">
-                <button onclick="setMethod('Pickup')" id="btn-pickup" class="flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow-sm transition-all">Pickup</button>
+                <button onclick="setMethod('Pickup')" id="btn-pickup" class="flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow-sm transition-all flex flex-col items-center">
+                    Pickup
+                    <span class="text-[9px] font-medium text-slate-400">@ Falcons Nest</span>
+                </button>
                 <button onclick="setMethod('Delivery')" id="btn-delivery" class="flex-1 py-3 rounded-xl font-bold text-sm text-slate-500 transition-all">Delivery (+15฿)</button>
             </div>
 
@@ -120,13 +123,12 @@
     <div id="success-modal" class="fixed inset-0 bg-blue-600 hidden z-[500] flex flex-col items-center justify-center text-center p-8 text-white">
         <div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center text-3xl mb-6 animate-bounce">✓</div>
         <h2 class="text-4xl font-black uppercase mb-4 italic tracking-tighter">Bag Secured!</h2>
-        <p class="text-blue-100 mb-2 font-bold">Total Due:</p>
+        <p class="text-blue-100 mb-2 font-bold" id="final-location-reminder">Head to The Falcons Nest for pickup</p>
         <p class="text-7xl font-black mb-12" id="final-price-display">0฿</p>
         <button onclick="location.reload()" class="bg-white text-blue-600 px-16 py-5 rounded-full font-black uppercase tracking-widest shadow-2xl">Done</button>
     </div>
 
     <script>
-        // ... (All JS remains the same as previous step for functionality)
         const firebaseConfig = { 
             apiKey: "AIzaSyAFGoJyyvtspQSauHUrWvSBWNF2taGJOYE",
             databaseURL: "https://thebagsite-default-rtdb.asia-southeast1.firebasedatabase.app/",
@@ -159,9 +161,13 @@
         function setMethod(m) {
             method = m;
             deliveryFee = (m === "Delivery") ? 15 : 0;
-            document.getElementById('btn-pickup').className = m === "Pickup" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow-sm transition" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-500 transition";
+            document.getElementById('btn-pickup').className = m === "Pickup" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow-sm transition flex flex-col items-center" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-500 transition flex flex-col items-center";
             document.getElementById('btn-delivery').className = m === "Delivery" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow-sm transition" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-500 transition";
             document.getElementById('loc-container').classList.toggle('hidden', m !== 'Delivery');
+            
+            // Update success screen reminder text
+            document.getElementById('final-location-reminder').innerText = (m === "Pickup") ? "Head to The Falcons Nest for pickup" : "Wait at your delivery location";
+            
             updateCartDisplay();
         }
 
@@ -224,7 +230,7 @@
             const orderData = {
                 name: document.getElementById('cust-name').value,
                 grade: document.getElementById('cust-grade').value || "N/A",
-                loc: document.getElementById('cust-loc').value || "Pickup",
+                loc: (method === 'Pickup') ? "Falcons Nest" : document.getElementById('cust-loc').value,
                 items: orderItems.join(', '),
                 total: total,
                 method: method,
