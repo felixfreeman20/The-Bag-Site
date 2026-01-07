@@ -10,7 +10,6 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f172a; color: white; }
-        .order-card { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); }
     </style>
 </head>
 <body class="p-6 pb-24">
@@ -20,81 +19,87 @@
             <h1 class="text-3xl font-black text-blue-500 italic uppercase tracking-tighter">Staff.</h1>
             <p class="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em]">Live Order Management</p>
         </div>
-        <div id="connection-status" class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-green-400">
-            <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span> Connected to Asia-SE
-        </div>
     </nav>
 
-    <main class="max-w-6xl mx-auto">
-        <div id="order-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div class="col-span-full text-center py-20 text-slate-600 font-bold uppercase tracking-widest text-sm">
-                Waiting for the first bag...
-            </div>
+    <main class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-10">
+        <div class="lg:col-span-2">
+            <h2 class="text-sm font-black uppercase tracking-widest text-slate-500 mb-6">Active Bags</h2>
+            <div id="order-list" class="grid gap-6">
+                </div>
+        </div>
+
+        <div class="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 h-fit">
+            <h2 class="text-sm font-black uppercase tracking-widest text-blue-500 mb-6">Inventory Levels</h2>
+            <div id="stock-manager" class="space-y-4">
+                </div>
+            <button onclick="saveStock()" class="w-full mt-8 bg-blue-600 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-blue-500 transition">Update All Stock</button>
         </div>
     </main>
 
     <script>
-        // YOUR UPDATED SINGAPORE CONFIG
         const firebaseConfig = { 
             apiKey: "AIzaSyAFGoJyyvtspQSauHUrWvSBWNF2taGJOYE",
             databaseURL: "https://thebagsite-default-rtdb.asia-southeast1.firebasedatabase.app/",
             projectId: "thebagsite"
         };
-        
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // Listen for data
-        db.ref('orders').on('value', (snapshot) => {
-            const orders = snapshot.val();
+        const itemIds = ['squid_l', 'doritos', 'squid_g', 'squid_o', 'squid_r', 'pocky', 'oreo', 'lays_s', 'lays_n', 'gummy', 'gum'];
+        const itemNames = {
+            squid_l: "Spicy Squid (L)", doritos: "Doritos", squid_g: "Squid (Green)",
+            squid_o: "Squid (Orange)", squid_r: "Squid (Red)", pocky: "Pocky",
+            oreo: "Oreo", lays_s: "Lays Seaweed", lays_n: "Lays Normal",
+            gummy: "Gummy Bears", gum: "Gum"
+        };
+
+        // Listen for Orders
+        db.ref('orders').on('value', (snap) => {
+            const orders = snap.val();
             const list = document.getElementById('order-list');
-            
-            if (!orders) {
-                list.innerHTML = `<div class="col-span-full text-center py-20 text-slate-600 font-bold">ALL BAGS DELIVERED.</div>`;
-                return;
-            }
-
-            list.innerHTML = "";
-            
-            // Show newest orders first
-            const sortedKeys = Object.keys(orders).reverse();
-
-            sortedKeys.forEach(id => {
+            list.innerHTML = orders ? "" : "<p class='text-slate-600 font-bold'>No active orders.</p>";
+            for(let id in orders) {
                 const o = orders[id];
-                const time = o.timestamp ? new Date(o.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--';
-
                 list.innerHTML += `
-                    <div class="order-card p-6 rounded-[2.5rem] flex flex-col justify-between transition-all border-t-4 border-blue-500 hover:bg-white/10">
-                        <div>
-                            <div class="flex justify-between items-start mb-4">
-                                <span class="bg-blue-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest text-white">${o.status || 'NEW'}</span>
-                                <span class="text-slate-500 text-[10px] font-bold">${time}</span>
+                    <div class="bg-white/5 p-6 rounded-[2rem] border border-white/10">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 class="font-black text-xl uppercase">${o.name}</h3>
+                                <p class="text-blue-400 font-bold text-xs uppercase">${o.grade} • ${o.method}</p>
                             </div>
-                            
-                            <h2 class="text-2xl font-black text-white mb-1 uppercase tracking-tight">${o.name}</h2>
-                            <p class="text-blue-400 font-bold text-xs mb-4 uppercase tracking-wider">${o.grade} • ${o.time} • ${o.method}</p>
-                            
-                            <div class="bg-white/5 p-4 rounded-2xl mb-4 border border-white/5">
-                                <p class="text-sm font-bold text-slate-200">${o.items}</p>
-                                <p class="text-xl font-black text-blue-400 mt-2">${o.total} THB</p>
-                            </div>
-                            
-                            ${o.notes && o.notes !== "None" ? `<p class="text-[11px] italic text-slate-400 mb-4 bg-slate-800/50 p-3 rounded-xl">"${o.notes}"</p>` : ''}
+                            <button onclick="clearOrder('${id}')" class="bg-green-500/10 text-green-500 px-4 py-2 rounded-xl font-bold text-[10px] uppercase hover:bg-green-500 hover:text-white transition">Clear</button>
                         </div>
+                        <p class="text-sm text-slate-300 font-bold">${o.items}</p>
+                        <p class="text-xl font-black text-white mt-2">${o.total} THB</p>
+                    </div>
+                `;
+            }
+        });
 
-                        <div class="flex gap-2 mt-4">
-                            <button onclick="deleteOrder('${id}')" class="flex-1 bg-white text-slate-900 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-green-500 hover:text-white transition-all">Complete Bag</button>
-                            <button onclick="deleteOrder('${id}')" class="bg-red-500/10 text-red-500 px-4 rounded-2xl font-black text-[10px] uppercase hover:bg-red-500 hover:text-white transition-all">✕</button>
-                        </div>
+        // Listen for Stock
+        db.ref('stock').on('value', (snap) => {
+            const stock = snap.val() || {};
+            const manager = document.getElementById('stock-manager');
+            manager.innerHTML = "";
+            itemIds.forEach(id => {
+                manager.innerHTML += `
+                    <div class="flex justify-between items-center bg-white/5 p-3 rounded-xl">
+                        <label class="text-xs font-bold text-slate-400">${itemNames[id]}</label>
+                        <input type="number" id="input-${id}" value="${stock[id] || 0}" class="w-16 bg-slate-800 border-none rounded-lg p-1 text-center font-black text-blue-400">
                     </div>
                 `;
             });
         });
 
-        function deleteOrder(id) {
-            // No confirm popup to make staff work faster
-            db.ref('orders/' + id).remove();
+        function saveStock() {
+            let newStock = {};
+            itemIds.forEach(id => {
+                newStock[id] = parseInt(document.getElementById(`input-${id}`).value) || 0;
+            });
+            db.ref('stock').set(newStock).then(() => alert("Stock Updated!"));
         }
+
+        function clearOrder(id) { db.ref('orders/' + id).remove(); }
     </script>
 </body>
 </html>
