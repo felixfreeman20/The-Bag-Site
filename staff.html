@@ -34,7 +34,7 @@
             <div class="glass-card p-6 rounded-[2.5rem]">
                 <h2 class="text-[10px] font-black uppercase text-blue-400 mb-6">Inventory Control</h2>
                 <div id="stock-manager" class="space-y-3 mb-6"></div>
-                <button onclick="saveStock()" class="w-full bg-blue-600 py-4 rounded-2xl font-black text-xs uppercase shadow-lg active:scale-95 transition-all">Save Supply</button>
+                <button onclick="saveStock()" class="w-full bg-blue-600 py-4 rounded-2xl font-black text-xs uppercase shadow-lg">Save Supply</button>
                 <button onclick="resetBank()" class="w-full mt-6 text-[9px] text-slate-600 font-bold uppercase tracking-widest hover:text-red-400">Reset Bank Revenue</button>
             </div>
         </div>
@@ -55,24 +55,11 @@
             const list = document.getElementById('order-list'); list.innerHTML = "";
             keys.reverse().forEach(id => {
                 const o = orders[id];
-                list.innerHTML += `
-                    <div class="glass-card p-6 rounded-[2.5rem] border-t-2 border-blue-500/30">
-                        <div class="flex justify-between items-start mb-2">
-                            <h3 class="text-2xl font-black uppercase">${o.name}</h3>
-                            ${o.isPromo ? '<span class="text-[9px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full font-black uppercase">-10% Code</span>' : ''}
-                        </div>
-                        <p class="text-sm font-bold text-slate-300 mb-4 bg-white/5 p-3 rounded-xl">${o.items}</p>
-                        <p class="text-cyan-400 font-black text-xs mb-6 italic">📍 ${o.loc}</p>
-                        <div class="flex gap-2">
-                            <button onclick="completeOrder('${id}', ${o.total})" class="flex-1 bg-green-600 py-3 rounded-xl font-black text-[10px] uppercase">Complete & Bank ${o.total}฿</button>
-                            <button onclick="deleteOrder('${id}')" class="bg-white/5 px-4 rounded-xl font-black text-xs hover:bg-red-600">✕</button>
-                        </div>
-                    </div>`;
+                list.innerHTML += `<div class="glass-card p-6 rounded-[2.5rem] border-t-2 border-blue-500/30 text-left"><h3 class="text-2xl font-black mb-2 uppercase">${o.name}</h3><p class="text-sm font-bold text-slate-300 mb-4 bg-white/5 p-3 rounded-xl">${o.items}</p><p class="text-cyan-400 font-black text-xs mb-6 italic">📍 ${o.loc}</p><button onclick="completeOrder('${id}', ${o.total})" class="w-full bg-green-600 py-3 rounded-xl font-black text-[10px] uppercase">Complete & Bank ${o.total}฿</button></div>`;
             });
         });
 
         async function completeOrder(id, amt) { const snap = await db.ref('lifetime_revenue').once('value'); await db.ref('lifetime_revenue').set((snap.val() || 0) + amt); db.ref('orders/' + id).remove(); }
-        function deleteOrder(id) { if(confirm("Discard?")) db.ref('orders/' + id).remove(); }
         function resetBank() { if(confirm("Reset lifetime bank to 0?")) db.ref('lifetime_revenue').set(0); }
 
         db.ref('stock').on('value', snap => {
