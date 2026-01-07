@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Staff Dashboard | THE BAG</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
@@ -17,31 +18,55 @@
         </div>
 
     <script>
-        const firebaseConfig = { apiKey: "...", databaseURL: "...", projectId: "..." };
+        // YOUR FIREBASE CONFIG
+        const firebaseConfig = { 
+            apiKey: "AIzaSyAFGoJyyvtspQSauHUrWvSBWNF2taGJOYE",
+            databaseURL: "https://thebag-e8ffd.firebaseio.com",
+            projectId: "thebag-e8ffd"
+        };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
+        // Listen for new orders
         db.ref('orders').on('value', (snap) => {
             const orders = snap.val();
             const list = document.getElementById('order-list');
             list.innerHTML = "";
+
+            if (!orders) {
+                list.innerHTML = `<p class="text-slate-600 font-bold uppercase text-sm col-span-full">No active bags to secure...</p>`;
+                return;
+            }
+
             for(let id in orders) {
+                const order = orders[id];
                 list.innerHTML += `
-                    <div class="bg-white text-slate-900 p-6 rounded-[2rem] shadow-xl">
+                    <div class="bg-white text-slate-900 p-6 rounded-[2rem] shadow-xl border-t-4 border-blue-500 transition-all transform hover:scale-[1.02]">
                         <div class="flex justify-between items-start mb-4">
                             <div>
-                                <h3 class="font-black text-xl uppercase">${orders[id].name}</h3>
-                                <p class="text-blue-600 font-bold uppercase text-xs">${orders[id].grade}</p>
+                                <h3 class="font-black text-xl uppercase tracking-tighter">${order.name}</h3>
+                                <p class="text-blue-600 font-bold uppercase text-[10px] tracking-widest">${order.grade} • ${order.time}</p>
                             </div>
+                            <span class="bg-slate-100 text-[10px] font-black px-2 py-1 rounded-lg uppercase">${order.method}</span>
                         </div>
-                        <p class="text-slate-500 font-medium mb-6">${orders[id].items}</p>
-                        <button onclick="clearOrder('${id}')" class="w-full bg-slate-100 py-3 rounded-xl font-bold text-xs uppercase hover:bg-red-50 hover:text-red-600 transition">Clear Order</button>
+                        
+                        <div class="bg-slate-50 p-4 rounded-2xl mb-4 border border-slate-100">
+                             <p class="text-slate-700 font-bold text-sm">${order.items}</p>
+                        </div>
+
+                        ${order.notes ? `<p class="text-[11px] italic text-slate-400 mb-6">"${order.notes}"</p>` : '<div class="mb-6"></div>'}
+                        
+                        <button onclick="clearOrder('${id}')" class="w-full bg-slate-900 text-white py-3 rounded-xl font-bold text-xs uppercase hover:bg-red-600 transition-colors">Complete & Clear</button>
                     </div>
                 `;
             }
         });
 
-        function clearOrder(id) { db.ref('orders/' + id).remove(); }
+        function clearOrder(id) { 
+            if(confirm("Mark this bag as delivered?")) {
+                db.ref('orders/' + id).remove(); 
+            }
+        }
     </script>
 </body>
 </html>
