@@ -22,7 +22,6 @@
     </nav>
 
     <main class="max-w-2xl mx-auto p-6 space-y-6">
-        
         <section class="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
             <h2 class="font-bold text-slate-800 mb-4 uppercase text-xs tracking-widest">1. Your Identity</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -100,16 +99,19 @@
     <div id="success-modal" class="fixed inset-0 bg-blue-600 hidden z-[200] flex flex-col items-center justify-center text-center p-8">
         <div class="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center text-white text-5xl mb-8 animate-bounce">✓</div>
         <h2 class="text-4xl font-black text-white uppercase italic mb-4 tracking-tighter">Order Secured!</h2>
-        <p class="text-blue-100 max-w-xs mb-10">Your snacks are being prepared. Check the staff dashboard for status.</p>
-        <button onclick="location.reload()" class="bg-white text-blue-600 px-12 py-4 rounded-full font-black uppercase tracking-widest shadow-2xl">Got it</button>
+        <p class="text-blue-100 max-w-xs mb-4">Please prepare your payment:</p>
+        <p class="text-6xl font-black text-white mb-10" id="final-price-display">0฿</p>
+        <button onclick="location.reload()" class="bg-white text-blue-600 px-12 py-4 rounded-full font-black uppercase tracking-widest shadow-2xl">Done</button>
     </div>
 
     <script>
+        // UPDATED CONFIG
         const firebaseConfig = { 
             apiKey: "AIzaSyAFGoJyyvtspQSauHUrWvSBWNF2taGJOYE",
-            databaseURL: "https://thebag-e8ffd.firebaseio.com",
-            projectId: "thebag-e8ffd"
+            databaseURL: "https://thebagsite-default-rtdb.firebaseio.com", // Updated URL
+            projectId: "thebagsite" // Updated ID
         };
+        
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
@@ -170,24 +172,27 @@
 
             const orderData = {
                 name: document.getElementById('cust-name').value,
-                grade: document.getElementById('cust-grade').value,
+                grade: document.getElementById('cust-grade').value || "N/A",
                 method: method,
                 time: document.getElementById('delivery-time').value,
-                notes: document.getElementById('special-notes').value,
-                items: `Chips x${cart.s1}, Bar x${cart.s2}`,
+                notes: document.getElementById('special-notes').value || "None",
+                items: `Chips: ${cart.s1}, Bars: ${cart.s2}`,
                 total: total,
                 status: "Pending",
                 timestamp: Date.now()
             };
 
-            db.ref('orders').push(orderData).then(() => {
-                document.getElementById('rules-modal').classList.add('hidden');
-                document.getElementById('success-modal').classList.remove('hidden');
-            }).catch(error => {
-                alert("Error: " + error.message);
-                btn.disabled = false;
-                btn.innerText = "Accept & Buy";
-            });
+            db.ref('orders').push(orderData)
+                .then(() => {
+                    document.getElementById('final-price-display').innerText = total + "฿";
+                    document.getElementById('rules-modal').classList.add('hidden');
+                    document.getElementById('success-modal').classList.remove('hidden');
+                })
+                .catch((error) => {
+                    alert("ERROR: " + error.message);
+                    btn.disabled = false;
+                    btn.innerText = "Accept & Buy";
+                });
         }
     </script>
 </body>
