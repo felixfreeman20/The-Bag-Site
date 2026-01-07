@@ -27,12 +27,12 @@
         
         <div class="flex items-center gap-8">
             <div class="text-right">
-                <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Today's Revenue</p>
-                <p class="text-3xl font-black text-green-400" id="revenue-display">0 THB</p>
+                <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest text-green-400">Total Earnings</p>
+                <p class="text-3xl font-black text-white" id="revenue-display">0 THB</p>
             </div>
             <div class="flex flex-col items-end gap-2">
                 <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Store Status</p>
-                <button onclick="toggleStore()" id="status-btn" class="px-6 py-2 rounded-full font-black text-[10px] uppercase tracking-widest bg-green-500 text-white shadow-lg transition-all">Open</button>
+                <button onclick="toggleStore()" id="status-btn" class="px-6 py-2 rounded-full font-black text-[10px] uppercase bg-green-500 text-white shadow-lg transition-all">Open</button>
             </div>
         </div>
     </nav>
@@ -48,6 +48,8 @@
                 <h2 class="text-sm font-black uppercase tracking-widest text-blue-500 mb-6 flex items-center gap-2">📦 Inventory</h2>
                 <div id="stock-manager" class="space-y-3 max-h-[50vh] overflow-y-auto pr-2"></div>
                 <button onclick="saveStock()" class="w-full mt-8 bg-blue-600 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-blue-500 transition-all active:scale-95">Update All Stock</button>
+                
+                <button onclick="resetRevenue()" class="w-full mt-4 text-[9px] text-slate-600 uppercase font-bold hover:text-red-400 transition">Reset Total Earnings</button>
             </div>
         </div>
     </main>
@@ -66,26 +68,22 @@
 
         let lastOrderCount = -1;
 
-        // 1. ORDERS, REVENUE & AUDIO
+        // 1. LISTEN FOR ORDERS & PLAY SOUND
         db.ref('orders').on('value', (snap) => {
             const orders = snap.val();
             const orderKeys = orders ? Object.keys(orders) : [];
             const list = document.getElementById('order-list');
             
-            // Audio Alert
             if (lastOrderCount !== -1 && orderKeys.length > lastOrderCount) {
                 document.getElementById('notif-sound').play().catch(() => {});
             }
             lastOrderCount = orderKeys.length;
 
-            // Revenue
-            let totalRev = 0;
             list.innerHTML = orders ? "" : "<div class='col-span-full text-center py-20 text-slate-700 font-bold uppercase text-sm'>Waiting for bags...</div>";
             
             if(orders) {
                 Object.keys(orders).reverse().forEach(id => {
                     const o = orders[id];
-                    totalRev += (o.total || 0);
                     list.innerHTML += `
                         <div class="order-card p-6 rounded-[2.5rem] flex flex-col justify-between border-t-4 border-blue-500">
                             <div>
@@ -102,16 +100,42 @@
                                 <p class="text-[11px] italic text-slate-400 bg-black/40 p-3 rounded-xl">"${o.notes}"</p>
                             </div>
                             <div class="flex gap-2 mt-6">
-                                <button onclick="clearOrder('${id}')" class="flex-1 bg-green-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest">Complete</button>
-                                <button onclick="clearOrder('${id}')" class="bg-red-500/10 text-red-500 px-5 rounded-2xl font-black">✕</button>
+                                <button onclick="completeOrder('${id}', ${o.total})" class="flex-1 bg-green-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-green-500">Complete</button>
+                                <button onclick="deleteOrder('${id}')" class="bg-red-500/10 text-red-500 px-5 rounded-2xl font-black">✕</button>
                             </div>
                         </div>`;
                 });
             }
-            document.getElementById('revenue-display').innerText = totalRev + " THB";
         });
 
-        // 2. STOCK
+        // 2. PERMANENT REVENUE LOGIC
+        db.ref('lifetime_revenue').on('value', (snap) => {
+            const rev = snap.val() || 0;
+            document.getElementById('revenue-display').innerText = rev + " THB";
+        });
+
+        async function completeOrder(id, amount) {
+            // First, update the lifetime revenue
+            const snap = await db.ref('lifetime_revenue').once('value');
+            const currentTotal = snap.val() || 0;
+            await db.ref('lifetime_revenue').set(currentTotal + amount);
+            // Then, remove the order from the list
+            db.ref('orders/' + id).remove();
+        }
+
+        function deleteOrder(id) {
+            if(confirm("Delete this order without adding to revenue?")) {
+                db.ref('orders/' + id).remove();
+            }
+        }
+
+        function resetRevenue() {
+            if(confirm("Are you sure you want to reset the total earnings to 0?")) {
+                db.ref('lifetime_revenue').set(0);
+            }
+        }
+
+        // 3. STOCK & STORE (Keep as is)
         db.ref('stock').on('value', (snap) => {
             const stock = snap.val() || {};
             const manager = document.getElementById('stock-manager');
@@ -130,7 +154,6 @@
             db.ref('stock').set(s).then(() => alert("✅ STOCK UPDATED"));
         }
 
-        // 3. STORE STATUS
         function toggleStore() {
             db.ref('settings/isOpen').once('value', snap => db.ref('settings/isOpen').set(!snap.val()));
         }
@@ -140,8 +163,6 @@
             btn.innerText = open ? "Open" : "Closed";
             btn.className = open ? "px-6 py-2 rounded-full font-black text-[10px] uppercase bg-green-500 text-white shadow-lg" : "px-6 py-2 rounded-full font-black text-[10px] uppercase bg-red-500 text-white shadow-lg";
         });
-
-        function clearOrder(id) { db.ref('orders/' + id).remove(); }
     </script>
 </body>
 </html>
