@@ -11,7 +11,6 @@
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; color: #0f172a; }
         .blue-gradient { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
-        .glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border: 1px solid #e2e8f0; }
         .hidden { display: none; }
     </style>
 </head>
@@ -94,7 +93,7 @@
                 <li class="flex gap-3">✅ <span>No classroom entry during lessons.</span></li>
                 <li class="flex gap-3">✅ <span>Have your money ready on arrival.</span></li>
             </ul>
-            <button onclick="submitOrder()" class="w-full blue-gradient text-white py-5 rounded-2xl font-black uppercase tracking-widest">Accept & Buy</button>
+            <button id="final-buy-btn" onclick="submitOrder()" class="w-full blue-gradient text-white py-5 rounded-2xl font-black uppercase tracking-widest">Accept & Buy</button>
         </div>
     </div>
 
@@ -106,7 +105,6 @@
     </div>
 
     <script>
-        // CONFIG
         const firebaseConfig = { 
             apiKey: "AIzaSyAFGoJyyvtspQSauHUrWvSBWNF2taGJOYE",
             databaseURL: "https://thebag-e8ffd.firebaseio.com",
@@ -144,8 +142,8 @@
             let snackTotal = (cart.s1 * prices.s1) + (cart.s2 * prices.s2);
             total = snackTotal + deliveryFee;
 
-            if(cart.s1 > 0) items.push(`Chips x${cart.s1} (${cart.s1 * prices.s1}฿)`);
-            if(cart.s2 > 0) items.push(`Energy Bar x${cart.s2} (${cart.s2 * prices.s2}฿)`);
+            if(cart.s1 > 0) items.push(`Chips x${cart.s1}`);
+            if(cart.s2 > 0) items.push(`Energy Bar x${cart.s2}`);
             
             if(items.length > 0) {
                 summary.classList.remove('hidden');
@@ -166,6 +164,10 @@
         }
 
         function submitOrder() {
+            const btn = document.getElementById('final-buy-btn');
+            btn.disabled = true;
+            btn.innerText = "Securing Bag...";
+
             const orderData = {
                 name: document.getElementById('cust-name').value,
                 grade: document.getElementById('cust-grade').value,
@@ -174,13 +176,17 @@
                 notes: document.getElementById('special-notes').value,
                 items: `Chips x${cart.s1}, Bar x${cart.s2}`,
                 total: total,
-                status: "Pending", // For Staff Dashboard
+                status: "Pending",
                 timestamp: Date.now()
             };
 
             db.ref('orders').push(orderData).then(() => {
                 document.getElementById('rules-modal').classList.add('hidden');
                 document.getElementById('success-modal').classList.remove('hidden');
+            }).catch(error => {
+                alert("Error: " + error.message);
+                btn.disabled = false;
+                btn.innerText = "Accept & Buy";
             });
         }
     </script>
