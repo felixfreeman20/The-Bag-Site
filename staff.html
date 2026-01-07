@@ -11,14 +11,12 @@
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f172a; color: white; }
         .order-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
     </style>
 </head>
 <body class="p-6 pb-24">
+    <audio id="notif-sound" src="https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3" preload="auto"></audio>
 
-    <nav class="max-w-7xl mx-auto flex justify-between items-center mb-10">
+    <nav class="max-w-7xl mx-auto flex flex-wrap justify-between items-center mb-10 gap-6">
         <div class="flex items-center gap-4">
             <img src="logo.png" alt="Logo" class="h-14 w-14 object-contain rounded-xl border border-white/10 shadow-lg">
             <div>
@@ -26,41 +24,35 @@
                 <p class="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em]">Alon & Sean Management</p>
             </div>
         </div>
-        <div id="connection-status" class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-green-400 bg-green-400/10 px-4 py-2 rounded-full border border-green-400/20">
-            <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span> Systems Live
+        
+        <div class="flex items-center gap-8">
+            <div class="text-right">
+                <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Today's Revenue</p>
+                <p class="text-3xl font-black text-green-400" id="revenue-display">0 THB</p>
+            </div>
+            <div class="flex flex-col items-end gap-2">
+                <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Store Status</p>
+                <button onclick="toggleStore()" id="status-btn" class="px-6 py-2 rounded-full font-black text-[10px] uppercase tracking-widest bg-green-500 text-white shadow-lg transition-all">Open</button>
+            </div>
         </div>
     </nav>
 
     <main class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10">
-        
         <div class="lg:col-span-8">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xs font-black uppercase tracking-widest text-slate-500">Active Bags</h2>
-            </div>
-            <div id="order-list" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="col-span-full text-center py-20 text-slate-700 font-bold uppercase tracking-widest text-sm">
-                    No orders in the queue...
-                </div>
-            </div>
+            <h2 class="text-xs font-black uppercase tracking-widest text-slate-500 mb-6 px-2">Active Bags</h2>
+            <div id="order-list" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
         </div>
 
         <div class="lg:col-span-4">
             <div class="bg-white/5 p-8 rounded-[2.5rem] border border-white/10 sticky top-24">
-                <h2 class="text-sm font-black uppercase tracking-widest text-blue-500 mb-6 flex items-center gap-2">
-                    📦 Inventory Levels
-                </h2>
-                <div id="stock-manager" class="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
-                    </div>
-                <button onclick="saveStock()" class="w-full mt-8 bg-blue-600 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/20 active:scale-95">
-                    Update All Stock
-                </button>
+                <h2 class="text-sm font-black uppercase tracking-widest text-blue-500 mb-6 flex items-center gap-2">📦 Inventory</h2>
+                <div id="stock-manager" class="space-y-3 max-h-[50vh] overflow-y-auto pr-2"></div>
+                <button onclick="saveStock()" class="w-full mt-8 bg-blue-600 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-blue-500 transition-all active:scale-95">Update All Stock</button>
             </div>
         </div>
-
     </main>
 
     <script>
-        // FIREBASE CONFIG
         const firebaseConfig = { 
             apiKey: "AIzaSyAFGoJyyvtspQSauHUrWvSBWNF2taGJOYE",
             databaseURL: "https://thebagsite-default-rtdb.asia-southeast1.firebasedatabase.app/",
@@ -70,106 +62,86 @@
         const db = firebase.database();
 
         const itemIds = ['squid_l', 'doritos', 'squid_g', 'squid_o', 'squid_r', 'pocky', 'oreo', 'lays_s', 'lays_n', 'gummy', 'gum'];
-        const itemNames = {
-            squid_l: "Spicy Squid (L)", 
-            doritos: "Cheese Doritos", 
-            squid_g: "Squid (Green)",
-            squid_o: "Squid (Orange)", 
-            squid_r: "Squid (Red)", 
-            pocky: "Pocky Choco",
-            oreo: "Oreo Pack", 
-            lays_s: "Lays Seaweed", 
-            lays_n: "Lays Normal",
-            gummy: "Gummy Bears", 
-            gum: "Chewing Gum"
-        };
+        const itemNames = { squid_l: "Spicy Squid (L)", doritos: "Cheese Doritos", squid_g: "Squid (Green)", squid_o: "Squid (Orange)", squid_r: "Squid (Red)", pocky: "Pocky Choco", oreo: "Oreo Pack", lays_s: "Lays Seaweed", lays_n: "Lays Normal", gummy: "Gummy Bears", gum: "Chewing Gum" };
 
-        // 1. LISTEN FOR ORDERS
+        let lastOrderCount = -1;
+
+        // 1. ORDERS, REVENUE & AUDIO
         db.ref('orders').on('value', (snap) => {
             const orders = snap.val();
+            const orderKeys = orders ? Object.keys(orders) : [];
             const list = document.getElementById('order-list');
             
-            if (!orders) {
-                list.innerHTML = `<div class="col-span-full text-center py-20 text-slate-700 font-bold uppercase tracking-widest text-sm">Waiting for the first bag...</div>`;
-                return;
+            // Audio Alert
+            if (lastOrderCount !== -1 && orderKeys.length > lastOrderCount) {
+                document.getElementById('notif-sound').play().catch(() => {});
             }
+            lastOrderCount = orderKeys.length;
 
-            list.innerHTML = "";
-            const sortedKeys = Object.keys(orders).reverse(); // Newest first
-
-            sortedKeys.forEach(id => {
-                const o = orders[id];
-                const time = o.timestamp ? new Date(o.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--';
-                
-                list.innerHTML += `
-                    <div class="order-card p-6 rounded-[2.5rem] flex flex-col justify-between transition-all border-t-4 border-blue-500 hover:bg-white/10">
-                        <div>
-                            <div class="flex justify-between items-start mb-4">
-                                <span class="bg-blue-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest text-white">${o.method}</span>
-                                <span class="text-slate-500 text-[10px] font-bold">${time}</span>
+            // Revenue
+            let totalRev = 0;
+            list.innerHTML = orders ? "" : "<div class='col-span-full text-center py-20 text-slate-700 font-bold uppercase text-sm'>Waiting for bags...</div>";
+            
+            if(orders) {
+                Object.keys(orders).reverse().forEach(id => {
+                    const o = orders[id];
+                    totalRev += (o.total || 0);
+                    list.innerHTML += `
+                        <div class="order-card p-6 rounded-[2.5rem] flex flex-col justify-between border-t-4 border-blue-500">
+                            <div>
+                                <div class="flex justify-between items-start mb-4">
+                                    <span class="bg-blue-600 text-[10px] font-black px-3 py-1 rounded-full uppercase text-white">${o.method}</span>
+                                </div>
+                                <h2 class="text-2xl font-black text-white italic uppercase tracking-tighter">${o.name}</h2>
+                                <p class="text-blue-400 font-bold text-xs mb-4 uppercase">${o.grade}</p>
+                                <div class="bg-white/5 p-4 rounded-2xl mb-4 border border-white/5">
+                                    <p class="text-sm font-bold text-slate-200">${o.items}</p>
+                                    <p class="text-2xl font-black text-blue-400 mt-2">${o.total} THB</p>
+                                </div>
+                                <p class="text-[11px] font-black text-cyan-400 uppercase tracking-widest mb-2">📍 Loc: ${o.loc || 'N/A'}</p>
+                                <p class="text-[11px] italic text-slate-400 bg-black/40 p-3 rounded-xl">"${o.notes}"</p>
                             </div>
-                            
-                            <h2 class="text-2xl font-black text-white mb-1 uppercase tracking-tight italic">${o.name}</h2>
-                            <p class="text-blue-400 font-bold text-xs mb-4 uppercase tracking-wider">${o.grade}</p>
-                            
-                            <div class="bg-white/5 p-4 rounded-2xl mb-4 border border-white/5">
-                                <p class="text-sm font-bold text-slate-200">${o.items}</p>
-                                <p class="text-2xl font-black text-blue-400 mt-2">${o.total} THB</p>
+                            <div class="flex gap-2 mt-6">
+                                <button onclick="clearOrder('${id}')" class="flex-1 bg-green-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest">Complete</button>
+                                <button onclick="clearOrder('${id}')" class="bg-red-500/10 text-red-500 px-5 rounded-2xl font-black">✕</button>
                             </div>
-
-                            <div class="space-y-2 mb-4">
-                                <p class="text-[11px] font-black text-cyan-400 uppercase tracking-widest">📍 Loc: ${o.loc || 'N/A'}</p>
-                                <p class="text-[11px] italic text-slate-400 bg-black/40 p-3 rounded-xl border border-white/5 leading-relaxed">
-                                    "${o.notes || 'No special notes'}"
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="flex gap-2 mt-2">
-                            <button onclick="clearOrder('${id}')" class="flex-1 bg-green-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-green-500 transition-all shadow-lg shadow-green-900/20 active:scale-95">Complete Order</button>
-                            <button onclick="clearOrder('${id}')" class="bg-red-500/10 text-red-500 px-5 rounded-2xl font-black text-[10px] uppercase hover:bg-red-500 hover:text-white transition-all">✕</button>
-                        </div>
-                    </div>
-                `;
-            });
+                        </div>`;
+                });
+            }
+            document.getElementById('revenue-display').innerText = totalRev + " THB";
         });
 
-        // 2. LISTEN FOR STOCK CHANGES
+        // 2. STOCK
         db.ref('stock').on('value', (snap) => {
             const stock = snap.val() || {};
             const manager = document.getElementById('stock-manager');
             manager.innerHTML = "";
-            
             itemIds.forEach(id => {
-                const count = stock[id] || 0;
                 manager.innerHTML += `
-                    <div class="flex justify-between items-center bg-white/5 p-3 rounded-2xl border border-white/5">
-                        <label class="text-[11px] font-bold text-slate-300 uppercase tracking-tight">${itemNames[id]}</label>
-                        <input type="number" id="input-${id}" value="${count}" class="w-16 bg-slate-900 border border-slate-700 rounded-xl p-2 text-center font-black text-blue-400 focus:ring-2 focus:ring-blue-500 outline-none">
-                    </div>
-                `;
+                <div class="flex justify-between items-center bg-white/5 p-3 rounded-2xl border border-white/5">
+                    <label class="text-[11px] font-bold text-slate-300 uppercase">${itemNames[id]}</label>
+                    <input type="number" id="input-${id}" value="${stock[id] || 0}" class="w-16 bg-slate-900 border border-slate-700 rounded-xl p-2 text-center text-blue-400 font-black outline-none">
+                </div>`;
             });
         });
 
-        // 3. SAVE STOCK DATA
         function saveStock() {
-            let newStock = {};
-            itemIds.forEach(id => {
-                const val = parseInt(document.getElementById(`input-${id}`).value);
-                newStock[id] = isNaN(val) ? 0 : val;
-            });
-            
-            db.ref('stock').set(newStock)
-                .then(() => {
-                    alert("✅ INVENTORY UPDATED");
-                })
-                .catch(err => alert("Error: " + err.message));
+            let s = {}; itemIds.forEach(id => s[id] = parseInt(document.getElementById('input-'+id).value) || 0);
+            db.ref('stock').set(s).then(() => alert("✅ STOCK UPDATED"));
         }
 
-        // 4. DELETE ORDER
-        function clearOrder(id) {
-            db.ref('orders/' + id).remove();
+        // 3. STORE STATUS
+        function toggleStore() {
+            db.ref('settings/isOpen').once('value', snap => db.ref('settings/isOpen').set(!snap.val()));
         }
+        db.ref('settings/isOpen').on('value', snap => {
+            const open = snap.val();
+            const btn = document.getElementById('status-btn');
+            btn.innerText = open ? "Open" : "Closed";
+            btn.className = open ? "px-6 py-2 rounded-full font-black text-[10px] uppercase bg-green-500 text-white shadow-lg" : "px-6 py-2 rounded-full font-black text-[10px] uppercase bg-red-500 text-white shadow-lg";
+        });
+
+        function clearOrder(id) { db.ref('orders/' + id).remove(); }
     </script>
 </body>
 </html>
