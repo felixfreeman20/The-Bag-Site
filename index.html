@@ -157,4 +157,109 @@
         let cart = {};
         let stock = {};
         let method = "Pickup";
-        let deliveryFee =
+        let deliveryFee = 0;
+
+        function toggleMenu() { document.getElementById('about-sidebar').classList.toggle('open'); }
+
+        // LISTEN FOR STORE STATUS (OPEN/CLOSED)
+        db.ref('settings/isOpen').on('value', (snap) => {
+            const isOpen = snap.val();
+            const storeContent = document.getElementById('store-content');
+            const closedMsg = document.getElementById('closed-message');
+            const bottomBar = document.getElementById('bottom-checkout-bar');
+
+            if (isOpen === false) {
+                storeContent.classList.add('hidden');
+                bottomBar.classList.add('hidden');
+                closedMsg.classList.remove('hidden');
+            } else {
+                storeContent.classList.remove('hidden');
+                bottomBar.classList.remove('hidden');
+                closedMsg.classList.add('hidden');
+            }
+        });
+
+        function setMethod(m) {
+            method = m;
+            deliveryFee = (m === "Delivery") ? 15 : 0;
+            document.getElementById('btn-pickup').className = m === "Pickup" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow-sm transition flex flex-col items-center" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-500 transition flex flex-col items-center";
+            document.getElementById('btn-delivery').className = m === "Delivery" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow-sm transition" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-500 transition";
+            document.getElementById('loc-container').classList.toggle('hidden', m !== 'Delivery');
+            document.getElementById('final-location-reminder').innerText = (m === "Pickup") ? "Head to The Falcons Nest for pickup" : "Wait at your delivery location";
+            updateCartDisplay();
+        }
+
+        db.ref('stock').on('value', (snap) => {
+            stock = snap.val() || {};
+            renderInventory();
+        });
+
+        function renderInventory() {
+            const container = document.getElementById('inventory-container');
+            container.innerHTML = "";
+            for (let id in itemsData) {
+                const s = stock[id] || 0;
+                const item = itemsData[id];
+                container.innerHTML += `
+                    <div class="bg-white p-6 rounded-[2.5rem] shadow-sm flex justify-between items-center border border-cyan-50 ${s <= 0 ? 'sold-out' : ''}">
+                        <div><h3 class="font-bold text-slate-800 text-lg">${item.name}</h3><p class="text-blue-600 font-black">${item.price} THB <span class="text-slate-400 text-[10px] ml-2 font-bold uppercase">${s <= 0 ? 'SOLD OUT' : 'Stock: '+s}</span></p></div>
+                        <div class="flex items-center gap-4 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+                            <button onclick="updateQty('${id}', -1)" class="w-10 h-10 bg-white rounded-xl shadow-sm font-bold active:scale-90">-</button>
+                            <span id="${id}-qty" class="text-lg font-black w-6 text-center text-blue-600">${cart[id] || 0}</span>
+                            <button onclick="updateQty('${id}', 1)" class="w-10 h-10 bg-white rounded-xl shadow-sm font-bold active:scale-90" ${s <= (cart[id]||0) ? 'disabled' : ''}>+</button>
+                        </div>
+                    </div>`;
+            }
+        }
+
+        function updateQty(id, amt) {
+            if (!cart[id]) cart[id] = 0;
+            const newQty = cart[id] + amt;
+            if (newQty >= 0 && newQty <= (stock[id] || 0)) {
+                cart[id] = newQty;
+                document.getElementById(id + '-qty').innerText = cart[id];
+                updateCartDisplay();
+            }
+        }
+
+        function updateCartDisplay() {
+            let total = deliveryFee;
+            for (let id in cart) { if (cart[id] > 0) { total += cart[id] * itemsData[id].price; } }
+            document.getElementById('total-display').innerText = total + " THB";
+        }
+
+        function showRules() {
+            if(!document.getElementById('cust-name').value) return alert("Please enter your name!");
+            if(method === 'Delivery' && !document.getElementById('cust-loc').value) return alert("Please enter your delivery location!");
+            document.getElementById('rules-modal').classList.remove('hidden');
+        }
+
+        async function submitOrder() {
+            const btn = document.getElementById('final-buy-btn');
+            btn.disabled = true; btn.innerText = "Securing Bag...";
+            let orderItems = []; let updates = {};
+            for(let id in cart) { if(cart[id] > 0) { orderItems.push(`${itemsData[id].name} x${cart[id]}`); updates[`/stock/${id}`] = stock[id] - cart[id]; } }
+            const total = parseInt(document.getElementById('total-display').innerText);
+            
+            const orderData = {
+                name: document.getElementById('cust-name').value,
+                grade: document.getElementById('cust-grade').value || "N/A",
+                loc: (method === 'Pickup') ? "Falcons Nest" : document.getElementById('cust-loc').value,
+                items: orderItems.join(', '),
+                total: total,
+                method: method,
+                notes: document.getElementById('special-notes').value || "No notes",
+                timestamp: Date.now()
+            };
+
+            try {
+                await db.ref('orders').push(orderData);
+                await db.ref().update(updates);
+                document.getElementById('final-price-display').innerText = total + "฿";
+                document.getElementById('rules-modal').classList.add('hidden');
+                document.getElementById('success-modal').classList.remove('hidden');
+            } catch(e) { alert("Order Failed: " + e.message); btn.disabled = false; }
+        }
+    </script>
+</body>
+</html>
