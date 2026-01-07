@@ -58,36 +58,39 @@
     </nav>
 
     <main class="max-w-2xl mx-auto p-6 space-y-6">
-        <section class="bg-white p-8 rounded-[2rem] shadow-sm border border-cyan-100">
-            <h2 class="font-bold text-slate-400 mb-4 uppercase text-[10px] tracking-[0.2em]">1. Your Identity</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input type="text" id="cust-name" placeholder="Full Name" class="bg-slate-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all">
-                <input type="text" id="cust-grade" placeholder="Grade (e.g. 10B)" class="bg-slate-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all">
-            </div>
-            
-            <div class="flex gap-2 p-1 bg-slate-100 rounded-2xl mt-4">
-                <button onclick="setMethod('Pickup')" id="btn-pickup" class="flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow-sm transition-all flex flex-col items-center">
-                    Pickup
-                    <span class="text-[9px] font-medium text-slate-400">@ Falcons Nest</span>
-                </button>
-                <button onclick="setMethod('Delivery')" id="btn-delivery" class="flex-1 py-3 rounded-xl font-bold text-sm text-slate-500 transition-all">Delivery (+15฿)</button>
-            </div>
+        <div id="closed-message" class="hidden text-center py-20 px-6">
+            <div class="text-6xl mb-6">😴</div>
+            <h2 class="text-3xl font-black text-blue-600 italic uppercase">The Bag is Closed.</h2>
+            <p class="text-slate-500 mt-2 font-medium">Alon & Sean are currently restocking or in class. Check back later!</p>
+        </div>
 
-            <div id="loc-container" class="mt-4 hidden animate-slide-down">
-                <input type="text" id="cust-loc" placeholder="Delivery Location (e.g. Room 302)" class="w-full bg-cyan-50 border border-cyan-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-cyan-500 text-sm">
-            </div>
-        </section>
+        <div id="store-content">
+            <section class="bg-white p-8 rounded-[2rem] shadow-sm border border-cyan-100">
+                <h2 class="font-bold text-slate-400 mb-4 uppercase text-[10px] tracking-[0.2em]">1. Your Identity</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="text" id="cust-name" placeholder="Full Name" class="bg-slate-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                    <input type="text" id="cust-grade" placeholder="Grade (e.g. 10B)" class="bg-slate-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                </div>
+                
+                <div class="flex gap-2 p-1 bg-slate-100 rounded-2xl mt-4">
+                    <button onclick="setMethod('Pickup')" id="btn-pickup" class="flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow-sm transition-all flex flex-col items-center">
+                        Pickup
+                        <span class="text-[9px] font-medium text-slate-400">@ Falcons Nest</span>
+                    </button>
+                    <button onclick="setMethod('Delivery')" id="btn-delivery" class="flex-1 py-3 rounded-xl font-bold text-sm text-slate-500 transition-all">Delivery (+15฿)</button>
+                </div>
 
-        <section class="space-y-4">
-            <h2 class="font-bold text-slate-400 uppercase text-[10px] tracking-[0.2em] px-2">2. Available Snacks</h2>
-            <div id="inventory-container" class="grid gap-4"></div>
-            <textarea id="special-notes" placeholder="Anything to say to The Bag team?" class="w-full bg-white p-6 rounded-3xl border border-cyan-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm italic" rows="2"></textarea>
-        </section>
+                <div id="loc-container" class="mt-4 hidden">
+                    <input type="text" id="cust-loc" placeholder="Delivery Location (e.g. Room 302)" class="w-full bg-cyan-50 border border-cyan-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-cyan-500 text-sm">
+                </div>
+            </section>
 
-        <section id="bag-summary" class="bg-blue-600 p-8 rounded-[2.5rem] text-white hidden shadow-2xl shadow-blue-200">
-            <h3 class="text-[10px] font-black uppercase tracking-[0.3em] mb-4 opacity-70">Order Breakdown</h3>
-            <div id="cart-items-list" class="space-y-2 font-bold italic uppercase text-sm"></div>
-        </section>
+            <section class="space-y-4 mt-6">
+                <h2 class="font-bold text-slate-400 uppercase text-[10px] tracking-[0.2em] px-2">2. Available Snacks</h2>
+                <div id="inventory-container" class="grid gap-4"></div>
+                <textarea id="special-notes" placeholder="Anything to say to The Bag team?" class="w-full bg-white p-6 rounded-3xl border border-cyan-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm italic mt-4" rows="2"></textarea>
+            </section>
+        </div>
 
         <footer class="pt-10 pb-20 text-center space-y-2 opacity-40">
             <p class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">Contact Us</p>
@@ -98,7 +101,7 @@
         </footer>
     </main>
 
-    <div class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl p-8 border-t z-50">
+    <div id="bottom-checkout-bar" class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl p-8 border-t z-50">
         <div class="max-w-2xl mx-auto flex justify-between items-center">
             <div>
                 <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Grand Total</p>
@@ -154,98 +157,4 @@
         let cart = {};
         let stock = {};
         let method = "Pickup";
-        let deliveryFee = 0;
-
-        function toggleMenu() { document.getElementById('about-sidebar').classList.toggle('open'); }
-
-        function setMethod(m) {
-            method = m;
-            deliveryFee = (m === "Delivery") ? 15 : 0;
-            document.getElementById('btn-pickup').className = m === "Pickup" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow-sm transition flex flex-col items-center" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-500 transition flex flex-col items-center";
-            document.getElementById('btn-delivery').className = m === "Delivery" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow-sm transition" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-500 transition";
-            document.getElementById('loc-container').classList.toggle('hidden', m !== 'Delivery');
-            
-            // Update success screen reminder text
-            document.getElementById('final-location-reminder').innerText = (m === "Pickup") ? "Head to The Falcons Nest for pickup" : "Wait at your delivery location";
-            
-            updateCartDisplay();
-        }
-
-        db.ref('stock').on('value', (snap) => {
-            stock = snap.val() || {};
-            renderInventory();
-        });
-
-        function renderInventory() {
-            const container = document.getElementById('inventory-container');
-            container.innerHTML = "";
-            for (let id in itemsData) {
-                const s = stock[id] || 0;
-                const item = itemsData[id];
-                container.innerHTML += `
-                    <div class="bg-white p-6 rounded-[2.5rem] shadow-sm flex justify-between items-center border border-cyan-50 ${s <= 0 ? 'sold-out' : ''}">
-                        <div><h3 class="font-bold text-slate-800 text-lg">${item.name}</h3><p class="text-blue-600 font-black">${item.price} THB <span class="text-slate-400 text-[10px] ml-2 font-bold uppercase">${s <= 0 ? 'SOLD OUT' : 'Stock: '+s}</span></p></div>
-                        <div class="flex items-center gap-4 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
-                            <button onclick="updateQty('${id}', -1)" class="w-10 h-10 bg-white rounded-xl shadow-sm font-bold active:scale-90">-</button>
-                            <span id="${id}-qty" class="text-lg font-black w-6 text-center text-blue-600">${cart[id] || 0}</span>
-                            <button onclick="updateQty('${id}', 1)" class="w-10 h-10 bg-white rounded-xl shadow-sm font-bold active:scale-90" ${s <= (cart[id]||0) ? 'disabled' : ''}>+</button>
-                        </div>
-                    </div>`;
-            }
-        }
-
-        function updateQty(id, amt) {
-            if (!cart[id]) cart[id] = 0;
-            const newQty = cart[id] + amt;
-            if (newQty >= 0 && newQty <= (stock[id] || 0)) {
-                cart[id] = newQty;
-                document.getElementById(id + '-qty').innerText = cart[id];
-                updateCartDisplay();
-            }
-        }
-
-        function updateCartDisplay() {
-            let total = deliveryFee;
-            let itemsHtml = "";
-            for (let id in cart) { if (cart[id] > 0) { total += cart[id] * itemsData[id].price; itemsHtml += `<div>${itemsData[id].name} x${cart[id]}</div>`; } }
-            document.getElementById('total-display').innerText = total + " THB";
-            const summary = document.getElementById('bag-summary');
-            summary.classList.toggle('hidden', total <= deliveryFee);
-            document.getElementById('cart-items-list').innerHTML = itemsHtml;
-        }
-
-        function showRules() {
-            if(!document.getElementById('cust-name').value) return alert("Please enter your name!");
-            if(method === 'Delivery' && !document.getElementById('cust-loc').value) return alert("Please enter your delivery location!");
-            document.getElementById('rules-modal').classList.remove('hidden');
-        }
-
-        async function submitOrder() {
-            const btn = document.getElementById('final-buy-btn');
-            btn.disabled = true; btn.innerText = "Securing Bag...";
-            let orderItems = []; let updates = {};
-            for(let id in cart) { if(cart[id] > 0) { orderItems.push(`${itemsData[id].name} x${cart[id]}`); updates[`/stock/${id}`] = stock[id] - cart[id]; } }
-            const total = parseInt(document.getElementById('total-display').innerText);
-            
-            const orderData = {
-                name: document.getElementById('cust-name').value,
-                grade: document.getElementById('cust-grade').value || "N/A",
-                loc: (method === 'Pickup') ? "Falcons Nest" : document.getElementById('cust-loc').value,
-                items: orderItems.join(', '),
-                total: total,
-                method: method,
-                notes: document.getElementById('special-notes').value || "No notes",
-                timestamp: Date.now()
-            };
-
-            try {
-                await db.ref('orders').push(orderData);
-                await db.ref().update(updates);
-                document.getElementById('final-price-display').innerText = total + "฿";
-                document.getElementById('rules-modal').classList.add('hidden');
-                document.getElementById('success-modal').classList.remove('hidden');
-            } catch(e) { alert("Order Failed: " + e.message); btn.disabled = false; }
-        }
-    </script>
-</body>
-</html>
+        let deliveryFee =
