@@ -3,54 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>THE BAG | Staff Dashboard</title>
+    <title>STAFF HQ | THE BAG</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #020617; color: white; }
         .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        .glow-text { text-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
     </style>
 </head>
 <body class="p-6">
     <audio id="notif-sound" src="https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3" preload="auto"></audio>
 
     <nav class="max-w-7xl mx-auto flex justify-between items-center mb-12">
-        <div class="flex items-center gap-4">
-            <h1 class="text-3xl font-black text-blue-500 italic uppercase glow-text">Staff HQ</h1>
-        </div>
-        <div class="flex items-center gap-8">
-            <div class="text-right">
-                <p class="text-[10px] font-black text-green-500 uppercase tracking-widest">Banked Revenue</p>
-                <p class="text-3xl font-black" id="revenue-display">0 THB</p>
-            </div>
-            <button onclick="toggleStore()" id="status-btn" class="px-8 py-3 rounded-full font-black text-[10px] uppercase bg-green-500 text-white">Open</button>
+        <h1 class="text-3xl font-black text-blue-500 uppercase italic">Staff HQ</h1>
+        <div class="flex items-center gap-8 text-right">
+            <div><p class="text-[10px] font-black text-green-500 uppercase">Banked Revenue</p><p class="text-3xl font-black" id="revenue-display">0 THB</p></div>
+            <button onclick="toggleStore()" id="status-btn" class="px-8 py-3 rounded-full font-black text-[10px] uppercase bg-green-500">Open</button>
         </div>
     </nav>
 
     <main class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div class="lg:col-span-8">
-            <h2 class="text-[10px] font-black uppercase text-slate-500 mb-6">Active Bags (<span id="active-count">0</span>)</h2>
+            <h2 class="text-[10px] font-black uppercase text-slate-500 mb-6">Active Orders (<span id="active-count">0</span>)</h2>
             <div id="order-list" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
         </div>
-
-        <div class="lg:col-span-4 space-y-6">
-            <div class="glass-card p-6 rounded-[2.5rem] flex flex-col h-96">
-                <h2 class="text-[10px] font-black uppercase text-blue-400 mb-4 tracking-widest">Live Support</h2>
-                <div id="staff-chat-messages" class="flex-1 overflow-y-auto mb-4 space-y-2 pr-2 text-[11px]"></div>
-                <div class="flex gap-2">
-                    <input type="text" id="staff-chat-input" placeholder="Reply..." class="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs outline-none">
-                    <button onclick="staffReply()" class="bg-blue-600 px-4 rounded-xl font-black text-[10px] uppercase">Send</button>
-                </div>
-                <button onclick="clearChat()" class="mt-4 text-[9px] text-slate-600 font-bold uppercase hover:text-red-400">Clear All Chat</button>
-            </div>
-
+        <div class="lg:col-span-4">
             <div class="glass-card p-6 rounded-[2.5rem]">
-                <h2 class="text-[10px] font-black uppercase text-blue-400 mb-6 tracking-widest">Inventory Supply</h2>
+                <h2 class="text-[10px] font-black uppercase text-blue-400 mb-6">Inventory</h2>
                 <div id="stock-manager" class="space-y-3 mb-6"></div>
-                <button onclick="saveStock()" class="w-full bg-blue-600 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg">Save Changes</button>
+                <button onclick="saveStock()" class="w-full bg-blue-600 py-4 rounded-2xl font-black text-xs uppercase shadow-lg">Save Supply</button>
             </div>
         </div>
     </main>
@@ -59,17 +41,15 @@
         const firebaseConfig = { apiKey: "AIzaSyAFGoJyyvtspQSauHUrWvSBWNF2taGJOYE", databaseURL: "https://thebagsite-default-rtdb.asia-southeast1.firebasedatabase.app/", projectId: "thebagsite" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-
         const itemIds = ['squid_l', 'doritos', 'squid_g', 'squid_o', 'squid_r', 'pocky', 'oreo', 'lays_s', 'lays_n', 'gummy', 'gum'];
-        let lastOrderCount = -1;
+        let lastCount = -1;
 
         db.ref('lifetime_revenue').on('value', snap => { document.getElementById('revenue-display').innerText = (snap.val() || 0) + " THB"; });
-
         db.ref('orders').on('value', snap => {
             const orders = snap.val();
             const keys = orders ? Object.keys(orders) : [];
-            if (lastOrderCount !== -1 && keys.length > lastOrderCount) document.getElementById('notif-sound').play().catch(()=>{});
-            lastOrderCount = keys.length;
+            if (lastCount !== -1 && keys.length > lastCount) document.getElementById('notif-sound').play();
+            lastCount = keys.length;
             document.getElementById('active-count').innerText = keys.length;
             const list = document.getElementById('order-list');
             list.innerHTML = "";
@@ -77,33 +57,12 @@
                 const o = orders[id];
                 list.innerHTML += `
                     <div class="glass-card p-6 rounded-[2.5rem] border-t-2 border-blue-500/30">
-                        <div class="flex justify-between items-center mb-4"><span class="text-blue-400 font-black text-[10px] uppercase">Bag ID: ${id.slice(-4).toUpperCase()}</span></div>
                         <h3 class="text-2xl font-black mb-2">${o.name}</h3>
                         <p class="text-sm font-bold text-slate-300 mb-4 bg-white/5 p-3 rounded-xl">${o.items}</p>
                         <p class="text-cyan-400 font-black text-xs mb-6 italic">📍 ${o.loc}</p>
-                        <div class="flex gap-2">
-                            <button onclick="completeOrder('${id}', ${o.total})" class="flex-1 bg-green-600 py-3 rounded-xl font-black text-[10px] uppercase">Complete & Bank ${o.total}฿</button>
-                            <button onclick="deleteOrder('${id}')" class="bg-white/5 px-4 rounded-xl font-black text-xs hover:bg-red-600">✕</button>
-                        </div>
+                        <button onclick="completeOrder('${id}', ${o.total})" class="w-full bg-green-600 py-3 rounded-xl font-black text-[10px] uppercase">Complete Order</button>
                     </div>`;
             });
-        });
-
-        function staffReply() {
-            const msg = document.getElementById('staff-chat-input').value;
-            if(!msg) return;
-            db.ref('chats').push({ sender: "Staff", message: msg, timestamp: Date.now(), isAdmin: true });
-            document.getElementById('staff-chat-input').value = "";
-        }
-
-        db.ref('chats').limitToLast(20).on('value', snap => {
-            const container = document.getElementById('staff-chat-messages'); container.innerHTML = "";
-            snap.forEach(child => {
-                const c = child.val();
-                const color = c.isAdmin ? 'text-blue-400' : 'text-green-400';
-                container.innerHTML += `<div class="p-2 border-b border-white/5"><span class="font-black ${color}">${c.sender}:</span> <span class="text-slate-300">${c.message}</span></div>`;
-            });
-            container.scrollTop = container.scrollHeight;
         });
 
         async function completeOrder(id, amt) {
@@ -112,15 +71,12 @@
             db.ref('orders/' + id).remove();
         }
 
-        function deleteOrder(id) { if(confirm("Discard?")) db.ref('orders/' + id).remove(); }
-        function clearChat() { if(confirm("Wipe chat?")) db.ref('chats').remove(); }
-
         db.ref('stock').on('value', snap => {
             const s = snap.val() || {};
             const m = document.getElementById('stock-manager'); m.innerHTML = "";
             itemIds.forEach(id => {
                 m.innerHTML += `<div class="flex justify-between items-center bg-white/5 p-3 rounded-xl">
-                    <span class="text-[10px] font-bold uppercase text-slate-400">${id.replace('_',' ')}</span>
+                    <span class="text-[10px] font-bold uppercase text-slate-400">${id}</span>
                     <input type="number" id="input-${id}" value="${s[id] || 0}" class="w-12 bg-transparent text-center font-black text-blue-400 outline-none">
                 </div>`;
             });
@@ -128,15 +84,14 @@
 
         function saveStock() {
             let s = {}; itemIds.forEach(id => s[id] = parseInt(document.getElementById('input-'+id).value) || 0);
-            db.ref('stock').set(s).then(() => alert("Inventory Updated"));
+            db.ref('stock').set(s); alert("Stock Updated");
         }
 
         function toggleStore() { db.ref('settings/isOpen').once('value', snap => db.ref('settings/isOpen').set(!snap.val())); }
         db.ref('settings/isOpen').on('value', snap => {
-            const open = snap.val();
             const btn = document.getElementById('status-btn');
-            btn.innerText = open ? "Open" : "Closed";
-            btn.className = open ? "px-8 py-3 rounded-full font-black text-[10px] uppercase bg-green-500" : "px-8 py-3 rounded-full font-black text-[10px] uppercase bg-red-500";
+            btn.innerText = snap.val() ? "Open" : "Closed";
+            btn.className = snap.val() ? "px-8 py-3 rounded-full font-black text-[10px] uppercase bg-green-500" : "px-8 py-3 rounded-full font-black text-[10px] uppercase bg-red-500";
         });
     </script>
 </body>
