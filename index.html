@@ -13,7 +13,6 @@
         .blue-gradient { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
         .hidden { display: none; }
         .sold-out { opacity: 0.4; filter: grayscale(1); pointer-events: none; }
-        .snack-card { transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 1px solid rgba(59, 130, 246, 0.05); }
         #about-sidebar { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); transform: translateX(-100%); }
         #about-sidebar.open { transform: translateX(0); }
     </style>
@@ -24,9 +23,7 @@
         <button onclick="toggleMenu()" class="text-slate-400 text-sm font-black uppercase tracking-widest mb-10">✕ Close</button>
         <div class="flex-1">
             <h2 class="text-3xl font-black text-blue-600 italic uppercase mb-6">The Story.</h2>
-            <p class="text-slate-600 leading-relaxed mb-6 font-medium text-sm">
-                The Bag Team was founded to make sure you never have to sit through a lesson hungry. Premium snacks, delivered fast.
-            </p>
+            <p class="text-slate-600 leading-relaxed mb-6 font-medium text-sm">Founded by Alon and Sean to keep you fueled.</p>
             <div class="space-y-4">
                 <div class="bg-cyan-50 p-4 rounded-2xl border border-cyan-100">
                     <p class="text-[10px] font-black text-cyan-600 uppercase tracking-widest">Founder</p>
@@ -38,44 +35,37 @@
                 </div>
             </div>
         </div>
-        <div class="text-[10px] text-slate-300 font-bold uppercase tracking-widest">UCIS Premium Fuel © 2026</div>
     </div>
 
     <nav id="main-nav" class="bg-white/80 backdrop-blur-md p-4 border-b sticky top-0 z-50 flex items-center px-6">
-        <div class="w-1/3 text-left">
-            <button onclick="toggleMenu()" class="inline-flex flex-col gap-1.5 p-2">
-                <div class="w-6 h-0.5 bg-blue-600 rounded-full"></div>
-                <div class="w-6 h-0.5 bg-blue-600 rounded-full"></div>
-                <div class="w-4 h-0.5 bg-blue-600 rounded-full"></div>
-            </button>
-        </div>
-        <div class="w-1/3 text-center"><h1 class="text-xl font-black text-blue-600 italic tracking-tighter uppercase">The Bag.</h1></div>
-        <div class="w-1/3 text-right"><img src="logo.png" alt="Logo" class="h-10 w-10 object-contain rounded-lg inline-block"></div>
+        <div class="w-1/3 text-left"><button onclick="toggleMenu()" class="inline-flex flex-col gap-1.5 p-2"><div class="w-6 h-0.5 bg-blue-600"></div><div class="w-6 h-0.5 bg-blue-600"></div><div class="w-4 h-0.5 bg-blue-600"></div></button></div>
+        <div class="w-1/3 text-center"><h1 class="text-xl font-black text-blue-600 italic uppercase">The Bag.</h1></div>
+        <div class="w-1/3 text-right"><img src="logo.png" alt="Logo" class="h-10 w-10 object-contain inline-block"></div>
     </nav>
 
     <main class="max-w-2xl mx-auto p-6">
         <div id="order-flow">
-            <div id="closed-message" class="hidden text-center py-24 px-6">
-                <div class="text-7xl mb-6">😴</div>
-                <h2 class="text-3xl font-black text-blue-600 uppercase italic">Restocking...</h2>
-            </div>
+            <div id="closed-message" class="hidden text-center py-24 px-6"><h2 class="text-3xl font-black text-blue-600 uppercase italic">Restocking...</h2></div>
 
             <div id="store-content" class="space-y-6">
                 <section class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-cyan-100">
-                    <h2 class="font-bold text-slate-400 mb-4 uppercase text-[10px] tracking-widest">1. Identity</h2>
+                    <h2 class="font-bold text-slate-400 mb-4 uppercase text-[10px] tracking-widest text-left">1. Identity & Promo</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <input type="text" id="cust-name" placeholder="Full Name" class="bg-slate-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500">
                         <input type="text" id="cust-grade" placeholder="Grade (e.g. 10B)" class="bg-slate-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div class="flex gap-2 p-1 bg-slate-100 rounded-2xl mt-4">
-                        <button onclick="setMethod('Pickup')" id="btn-pickup" class="flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow-sm">Pickup</button>
+                        <button onclick="setMethod('Pickup')" id="btn-pickup" class="flex-1 py-3 rounded-xl font-bold text-sm bg-white">Pickup</button>
                         <button onclick="setMethod('Delivery')" id="btn-delivery" class="flex-1 py-3 rounded-xl font-bold text-sm text-slate-500">Delivery (+15฿)</button>
+                    </div>
+                    <div class="mt-4">
+                        <input type="text" id="promo-code" oninput="updateCartDisplay()" placeholder="Promo Code (Optional)" class="w-full bg-blue-50/50 border border-blue-100 p-4 rounded-2xl outline-none text-sm font-bold text-blue-600 placeholder:text-blue-300">
                     </div>
                     <div id="loc-container" class="mt-4 hidden"><input type="text" id="cust-loc" placeholder="Room / Area" class="w-full bg-cyan-50 border border-cyan-100 p-4 rounded-2xl outline-none text-sm"></div>
                 </section>
 
                 <section class="space-y-4">
-                    <h2 class="font-bold text-slate-400 uppercase text-[10px] tracking-widest px-2">2. Available Snacks</h2>
+                    <h2 class="font-bold text-slate-400 uppercase text-[10px] tracking-widest px-2 text-left">2. Available Snacks</h2>
                     <div id="inventory-container" class="grid gap-4"></div>
                 </section>
             </div>
@@ -89,14 +79,14 @@
                     <p class="text-blue-100 text-[10px] font-bold uppercase tracking-widest mt-1" id="receipt-id"></p>
                 </div>
                 <div class="p-8 space-y-6">
-                    <div class="flex justify-between items-end border-b pb-6">
+                    <div class="flex justify-between items-end border-b pb-6 text-left">
                         <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Wait Time</p><p class="text-4xl font-black text-blue-600" id="est-time">--</p></div>
                         <div class="text-right"><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">To Pay</p><p class="text-4xl font-black text-slate-800" id="receipt-total">0฿</p></div>
                     </div>
-                    <div class="space-y-4">
+                    <div class="space-y-4 text-left">
                         <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Items</p><p class="font-bold text-slate-700 text-sm" id="receipt-items"></p></div>
                         <div class="bg-blue-50 p-5 rounded-3xl border border-blue-100">
-                            <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Location</p>
+                            <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1 text-left">Location</p>
                             <p class="font-black text-slate-800 italic" id="receipt-location"></p>
                         </div>
                     </div>
@@ -109,8 +99,8 @@
     </main>
 
     <div id="bottom-bar" class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl p-8 border-t z-50">
-        <div class="max-w-2xl mx-auto flex justify-between items-center">
-            <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total</p><p class="text-3xl font-black text-blue-600" id="total-display">0 THB</p></div>
+        <div class="max-w-2xl mx-auto flex justify-between items-center text-left">
+            <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Price</p><p class="text-3xl font-black text-blue-600" id="total-display">0 THB</p></div>
             <button onclick="showRules()" class="blue-gradient text-white px-10 py-4 rounded-2xl font-black uppercase tracking-widest">Secure Bag</button>
         </div>
     </div>
@@ -118,10 +108,7 @@
     <div id="rules-modal" class="fixed inset-0 bg-slate-900/60 hidden z-[400] flex items-center justify-center p-6 backdrop-blur-sm">
         <div class="bg-white p-10 rounded-[3rem] max-w-sm w-full shadow-2xl text-center">
             <h2 class="text-2xl font-black mb-6 uppercase italic text-blue-600">The Rules</h2>
-            <ul class="text-slate-500 mb-8 text-sm space-y-2 text-left font-medium">
-                <li>• Cash must be ready.</li>
-                <li>• No pickups during lessons.</li>
-            </ul>
+            <ul class="text-slate-500 mb-8 text-sm space-y-2 text-left font-medium italic"><li>• Cash must be ready.</li><li>• No pickups during lessons.</li></ul>
             <button id="final-buy-btn" onclick="submitOrder()" class="w-full blue-gradient text-white py-5 rounded-2xl font-black uppercase tracking-widest">Accept & Buy</button>
         </div>
     </div>
@@ -152,8 +139,8 @@
 
         function setMethod(m) {
             method = m; deliveryFee = (m === "Delivery") ? 15 : 0;
-            document.getElementById('btn-pickup').className = m === "Pickup" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow-sm" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-500";
-            document.getElementById('btn-delivery').className = m === "Delivery" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow-sm" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-500";
+            document.getElementById('btn-pickup').className = m === "Pickup" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-white" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-500";
+            document.getElementById('btn-delivery').className = m === "Delivery" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-white" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-500";
             document.getElementById('loc-container').classList.toggle('hidden', m !== 'Delivery');
             updateCartDisplay();
         }
@@ -164,15 +151,7 @@
             const container = document.getElementById('inventory-container'); container.innerHTML = "";
             for (let id in itemsData) {
                 const s = stock[id] || 0;
-                container.innerHTML += `
-                    <div class="snack-card bg-white p-6 rounded-[2rem] shadow-sm flex justify-between items-center ${s <= 0 ? 'sold-out' : ''}">
-                        <div><h3 class="font-bold text-slate-800 text-lg">${itemsData[id].name}</h3><p class="text-blue-600 font-black">${itemsData[id].price} THB</p></div>
-                        <div class="flex items-center gap-4 bg-slate-50 p-1.5 rounded-2xl">
-                            <button onclick="updateQty('${id}', -1)" class="w-10 h-10 bg-white rounded-xl shadow-sm font-bold">-</button>
-                            <span id="${id}-qty" class="text-lg font-black w-6 text-center text-blue-600">${cart[id] || 0}</span>
-                            <button onclick="updateQty('${id}', 1)" class="w-10 h-10 bg-white rounded-xl shadow-sm font-bold" ${s <= (cart[id]||0) ? 'disabled' : ''}>+</button>
-                        </div>
-                    </div>`;
+                container.innerHTML += `<div class="snack-card bg-white p-6 rounded-[2rem] shadow-sm flex justify-between items-center ${s <= 0 ? 'sold-out' : ''}"><div><h3 class="font-bold text-slate-800 text-lg">${itemsData[id].name}</h3><p class="text-blue-600 font-black">${itemsData[id].price} THB</p></div><div class="flex items-center gap-4 bg-slate-50 p-1.5 rounded-2xl"><button onclick="updateQty('${id}', -1)" class="w-10 h-10 bg-white rounded-xl shadow-sm font-bold">-</button><span id="${id}-qty" class="text-lg font-black w-6 text-center text-blue-600">${cart[id] || 0}</span><button onclick="updateQty('${id}', 1)" class="w-10 h-10 bg-white rounded-xl shadow-sm font-bold" ${s <= (cart[id]||0) ? 'disabled' : ''}>+</button></div></div>`;
             }
         }
 
@@ -183,9 +162,17 @@
         }
 
         function updateCartDisplay() {
-            let total = deliveryFee;
-            for (let id in cart) total += (cart[id] * itemsData[id].price);
+            let subtotal = 0;
+            for (let id in cart) subtotal += (cart[id] * itemsData[id].price);
+            
+            // Apply 10% Loyalty Code
+            if(document.getElementById('promo-code').value.toUpperCase() === "MONEYTIME10") {
+                subtotal = subtotal * 0.9;
+            }
+            
+            let total = Math.ceil(subtotal + deliveryFee);
             document.getElementById('total-display').innerText = total + " THB";
+            return total;
         }
 
         function showRules() {
@@ -194,38 +181,20 @@
         }
 
         async function submitOrder() {
-            const btn = document.getElementById('final-buy-btn');
-            btn.disabled = true;
-            const freshSnap = await db.ref('stock').once('value');
-            const fs = freshSnap.val() || {};
-            
-            let itemsArr = [], updates = {}, total = deliveryFee;
-            for(let id in cart) {
-                if(cart[id] > 0) {
-                    itemsArr.push(`${itemsData[id].name} x${cart[id]}`);
-                    updates[`/stock/${id}`] = fs[id] - cart[id];
-                    total += (cart[id] * itemsData[id].price);
-                }
-            }
+            const btn = document.getElementById('final-buy-btn'); btn.disabled = true;
+            const freshSnap = await db.ref('stock').once('value'); const fs = freshSnap.val() || {};
+            let itemsArr = [], updates = {};
+            for(let id in cart) { if(cart[id] > 0) { itemsArr.push(`${itemsData[id].name} x${cart[id]}`); updates[`/stock/${id}`] = fs[id] - cart[id]; } }
             if(itemsArr.length === 0) return alert("Empty!");
-
+            const finalTotal = updateCartDisplay();
             const finalLoc = (method === 'Pickup') ? "Falcons Nest" : document.getElementById('cust-loc').value;
-            const order = { name: document.getElementById('cust-name').value, loc: finalLoc, items: itemsArr.join(', '), total, timestamp: Date.now() };
-
-            const newRef = await db.ref('orders').push(order);
-            await db.ref().update(updates);
-
-            let wait = 2;
-            if(activeOrderCount > 5) wait = 9;
-            else if(activeOrderCount > 2) wait = 6;
-            else if(activeOrderCount > 0) wait = 4;
-
-            document.getElementById('order-flow').classList.add('hidden');
-            document.getElementById('bottom-bar').classList.add('hidden');
-            document.getElementById('rules-modal').classList.add('hidden');
-            document.getElementById('main-nav').classList.add('hidden');
+            const order = { name: document.getElementById('cust-name').value, loc: finalLoc, items: itemsArr.join(', '), total: finalTotal, timestamp: Date.now() };
+            const newRef = await db.ref('orders').push(order); await db.ref().update(updates);
+            let wait = activeOrderCount > 5 ? 9 : (activeOrderCount > 2 ? 6 : (activeOrderCount > 0 ? 4 : 2));
+            document.getElementById('order-flow').classList.add('hidden'); document.getElementById('bottom-bar').classList.add('hidden');
+            document.getElementById('rules-modal').classList.add('hidden'); document.getElementById('main-nav').classList.add('hidden');
             document.getElementById('receipt-id').innerText = "ID: #" + newRef.key.slice(-4).toUpperCase();
-            document.getElementById('receipt-total').innerText = total + "฿";
+            document.getElementById('receipt-total').innerText = finalTotal + "฿";
             document.getElementById('receipt-items').innerText = itemsArr.join(', ');
             document.getElementById('receipt-location').innerText = finalLoc;
             document.getElementById('est-time').innerText = wait + " mins";
