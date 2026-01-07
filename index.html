@@ -15,7 +15,7 @@
         .sold-out { opacity: 0.4; filter: grayscale(1); pointer-events: none; }
         #about-sidebar { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); transform: translateX(-100%); }
         #about-sidebar.open { transform: translateX(0); }
-        #inventory-container { max-height: 500px; overflow-y: auto; padding-right: 8px; scrollbar-width: thin; }
+        #inventory-container { max-height: 480px; overflow-y: auto; padding-right: 8px; scrollbar-width: thin; }
     </style>
 </head>
 <body class="pb-64 overflow-x-hidden">
@@ -56,8 +56,8 @@
                 <section class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-cyan-100">
                     <h2 class="font-bold text-slate-400 mb-4 uppercase text-[10px] tracking-widest">1. Identity</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input type="text" id="cust-name" placeholder="Full Name" class="bg-slate-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500">
-                        <input type="text" id="cust-grade" placeholder="Grade (e.g. 10B)" class="bg-slate-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500">
+                        <input type="text" id="cust-name" placeholder="Full Name" class="bg-slate-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                        <input type="text" id="cust-grade" placeholder="Grade (e.g. 10B)" class="bg-slate-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all">
                     </div>
                     <div class="flex gap-2 p-1 bg-slate-100 rounded-2xl mt-4">
                         <button onclick="setMethod('Pickup')" id="btn-pickup" class="flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow-sm">Pickup</button>
@@ -102,22 +102,19 @@
 
     <div id="bottom-bar" class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl p-8 border-t z-50">
         <div class="max-w-2xl mx-auto flex justify-between items-center">
-            <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total</p><p class="text-3xl font-black text-blue-600" id="total-display">0 THB</p></div>
-            <button onclick="showRules()" class="blue-gradient text-white px-10 py-4 rounded-2xl font-black uppercase tracking-widest">Secure Bag</button>
+            <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Price</p><p class="text-3xl font-black text-blue-600" id="total-display">0 THB</p></div>
+            <button onclick="showRules()" class="blue-gradient text-white px-10 py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all">Secure Bag</button>
         </div>
     </div>
 
     <div id="rules-modal" class="fixed inset-0 bg-slate-900/60 hidden z-[400] flex items-center justify-center p-6 backdrop-blur-sm">
-        <div class="bg-white p-10 rounded-[3rem] max-w-sm w-full shadow-2xl text-center">
+        <div class="bg-white p-10 rounded-[3rem] max-w-sm w-full shadow-2xl text-center border-b-8 border-blue-600">
             <h2 class="text-2xl font-black mb-6 uppercase italic text-blue-600">The Rules</h2>
-            <ul class="text-slate-500 mb-4 text-sm space-y-3 text-left font-medium italic">
-                <li>• Must present Digital Receipt and Bag ID for collection.</li>
-                <li>• Exact change is required for large bills to ensure speed.</li>
-                <li>• No deliveries or pickups allowed while lessons are in progress.</li>
+            <ul class="text-slate-500 mb-8 text-sm space-y-4 text-left font-medium italic leading-snug">
+                <li>• Please ensure your cash is ready for immediate collection upon arrival.</li>
+                <li>• No bag pickups or deliveries are permitted while lessons are in session.</li>
+                <li>• Exclusive Loyalty & Promo codes are coming soon to the platform!</li>
             </ul>
-            <div class="bg-blue-50 p-3 rounded-2xl mb-8 border border-blue-100">
-                <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest animate-pulse">📢 Promo Codes Coming Soon!</p>
-            </div>
             <button id="final-buy-btn" onclick="submitOrder()" class="w-full blue-gradient text-white py-5 rounded-2xl font-black uppercase tracking-widest">Accept & Buy</button>
         </div>
     </div>
@@ -190,7 +187,7 @@
             if(itemsArr.length === 0) return alert("Empty!");
             const finalTotal = updateCartDisplay();
             const finalLoc = (method === 'Pickup') ? "Falcons Nest" : document.getElementById('cust-loc').value;
-            const order = { name: document.getElementById('cust-name').value, loc: finalLoc, items: itemsArr.join(', '), total: finalTotal, timestamp: Date.now() };
+            const order = { name: document.getElementById('cust-name').value, grade: document.getElementById('cust-grade').value, loc: finalLoc, items: itemsArr.join(', '), total: finalTotal, timestamp: Date.now() };
             const newRef = await db.ref('orders').push(order); await db.ref().update(updates);
             let wait = activeOrderCount > 5 ? 9 : (activeOrderCount > 2 ? 6 : (activeOrderCount > 0 ? 4 : 2));
             document.getElementById('order-flow').classList.add('hidden'); document.getElementById('bottom-bar').classList.add('hidden');
