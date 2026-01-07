@@ -24,7 +24,7 @@
         <div class="flex-1">
             <h2 class="text-3xl font-black text-blue-600 italic uppercase mb-6">The Story.</h2>
             <p class="text-slate-600 leading-relaxed mb-6 font-medium">
-                Campus life is busy, and cafeteria lines are way too long. We started <span class="text-blue-600 font-bold">The Bag</span> to make sure you never have to sit through a lesson on an empty stomach.
+                Campus life is busy, and cafeteria lines are way too long. <span class="text-blue-600 font-bold">The Bag Team</span> was started to make sure you never have to sit through a lesson on an empty stomach.
             </p>
             <div class="space-y-4">
                 <div class="bg-cyan-50 p-4 rounded-2xl">
@@ -71,14 +71,14 @@
             </div>
 
             <div id="loc-container" class="mt-4 hidden animate-slide-down">
-                <input type="text" id="cust-loc" placeholder="Delivery Location (e.g. Room 302, Courtyard)" class="w-full bg-cyan-50 border border-cyan-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-cyan-500 text-sm">
+                <input type="text" id="cust-loc" placeholder="Delivery Location (e.g. Room 302)" class="w-full bg-cyan-50 border border-cyan-100 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-cyan-500 text-sm">
             </div>
         </section>
 
         <section class="space-y-4">
             <h2 class="font-bold text-slate-400 uppercase text-[10px] tracking-[0.2em] px-2">2. Available Snacks</h2>
             <div id="inventory-container" class="grid gap-4"></div>
-            <textarea id="special-notes" placeholder="Any special notes for Alon & Sean?" class="w-full bg-white p-6 rounded-3xl border border-cyan-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm italic" rows="2"></textarea>
+            <textarea id="special-notes" placeholder="Anything to say to The Bag team?" class="w-full bg-white p-6 rounded-3xl border border-cyan-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm italic" rows="2"></textarea>
         </section>
 
         <section id="bag-summary" class="bg-blue-600 p-8 rounded-[2.5rem] text-white hidden shadow-2xl shadow-blue-200">
@@ -87,10 +87,10 @@
         </section>
 
         <footer class="pt-10 pb-20 text-center space-y-2 opacity-40">
-            <p class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">Contact Founders</p>
+            <p class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">Contact Us</p>
             <div class="flex flex-col gap-1">
-                <a href="mailto:200050@ucis.ac.th" class="text-[10px] font-bold text-slate-600 underline">Alon: 200050@ucis.ac.th</a>
-                <a href="mailto:250054@ucis.ac.th" class="text-[10px] font-bold text-slate-600 underline">Sean: 250054@ucis.ac.th</a>
+                <a href="mailto:200050@ucis.ac.th" class="text-[10px] font-bold text-slate-600 underline">200050@ucis.ac.th</a>
+                <a href="mailto:250054@ucis.ac.th" class="text-[10px] font-bold text-slate-600 underline">250054@ucis.ac.th</a>
             </div>
         </footer>
     </main>
@@ -110,7 +110,7 @@
             <h2 class="text-2xl font-black mb-6 uppercase italic text-blue-600">The Rules</h2>
             <ul class="text-slate-500 mb-8 text-sm space-y-2 text-left px-2 font-medium">
                 <li>• Cash must be ready on arrival.</li>
-                <li>• No deliveries/handouts during class.</li>
+                <li>• No deliveries or pickups during class.</li>
                 <li>• Pre-order options are coming soon!</li>
             </ul>
             <button id="final-buy-btn" onclick="submitOrder()" class="w-full blue-gradient text-white py-5 rounded-2xl font-black uppercase tracking-widest">Accept & Buy</button>
@@ -126,6 +126,7 @@
     </div>
 
     <script>
+        // ... (All JS remains the same as previous step for functionality)
         const firebaseConfig = { 
             apiKey: "AIzaSyAFGoJyyvtspQSauHUrWvSBWNF2taGJOYE",
             databaseURL: "https://thebagsite-default-rtdb.asia-southeast1.firebasedatabase.app/",
