@@ -11,14 +11,16 @@
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; color: #0f172a; }
         .blue-gradient { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
-        .hidden { display: none; }
+        .sold-out { opacity: 0.5; filter: grayscale(1); pointer-events: none; }
     </style>
 </head>
 <body class="pb-48">
 
-    <nav class="bg-white/80 backdrop-blur-md p-6 border-b sticky top-0 z-50 flex justify-between items-center">
-        <h1 class="text-3xl font-black text-blue-600 italic tracking-tighter uppercase">The Bag.</h1>
-        <div class="text-[10px] font-black text-slate-400 border border-slate-200 px-3 py-1 rounded-full uppercase tracking-widest">CNX Student Edition</div>
+    <nav class="bg-white/80 backdrop-blur-md p-4 border-b sticky top-0 z-50 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <img src="logo.png" alt="THE BAG" class="h-10 w-10 object-contain rounded-lg">
+            <h1 class="text-2xl font-black text-blue-600 italic tracking-tighter uppercase">The Bag.</h1>
+        </div>
     </nav>
 
     <main class="max-w-2xl mx-auto p-6 space-y-6">
@@ -28,49 +30,22 @@
                 <input type="text" id="cust-name" placeholder="Full Name" class="bg-slate-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all">
                 <input type="text" id="cust-grade" placeholder="Grade (e.g. 10B)" class="bg-slate-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all">
             </div>
-            
-            <h2 class="font-bold text-slate-800 mt-8 mb-4 uppercase text-xs tracking-widest">2. Pickup or Delivery</h2>
-            <div class="flex gap-2 p-1 bg-slate-100 rounded-2xl">
-                <button onclick="setMethod('Pickup')" id="btn-pickup" class="flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow-sm transition-all">Pickup (Free)</button>
+            <div class="flex gap-2 p-1 bg-slate-100 rounded-2xl mt-4">
+                <button onclick="setMethod('Pickup')" id="btn-pickup" class="flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow-sm transition-all">Pickup</button>
                 <button onclick="setMethod('Delivery')" id="btn-delivery" class="flex-1 py-3 rounded-xl font-bold text-sm text-slate-500 transition-all">Delivery (+15฿)</button>
             </div>
-
-            <h2 class="font-bold text-slate-800 mt-8 mb-4 uppercase text-xs tracking-widest">3. Preferred Time</h2>
-            <select id="delivery-time" class="w-full bg-slate-50 p-4 rounded-2xl outline-none border-none font-bold text-blue-600 appearance-none cursor-pointer">
-                <option value="Morning Break">Morning Break</option>
-                <option value="Lunch">Lunch</option>
-            </select>
         </section>
 
         <section class="space-y-4">
-            <h2 class="font-bold text-slate-800 uppercase text-xs tracking-widest px-2">4. Daily Inventory</h2>
-            
-            <div class="bg-white p-6 rounded-[2.5rem] shadow-sm flex justify-between items-center border border-slate-100 relative overflow-hidden">
-                <div class="absolute top-4 left-4 bg-orange-500 text-white text-[10px] font-black px-2 py-1 rounded-lg uppercase italic">Popular</div>
-                <div class="mt-4"><h3 class="font-bold text-lg text-slate-800">Classic Chips</h3><p class="text-blue-600 font-black">20 THB</p></div>
-                <div class="flex items-center gap-4 bg-slate-100 p-1.5 rounded-2xl">
-                    <button onclick="updateQty('s1', -1)" class="w-10 h-10 bg-white rounded-xl shadow-sm font-bold active:scale-90">-</button>
-                    <span id="s1-qty" class="text-lg font-black w-6 text-center text-blue-600">0</span>
-                    <button onclick="updateQty('s1', 1)" class="w-10 h-10 bg-white rounded-xl shadow-sm font-bold active:scale-90">+</button>
+            <h2 class="font-bold text-slate-800 uppercase text-xs tracking-widest px-2">2. Available Snacks</h2>
+            <div id="inventory-container" class="grid gap-4">
                 </div>
-            </div>
-
-            <div class="bg-white p-6 rounded-[2.5rem] shadow-sm flex justify-between items-center border border-slate-100">
-                <div><h3 class="font-bold text-lg text-slate-800">Energy Bar</h3><p class="text-blue-600 font-black">35 THB</p></div>
-                <div class="flex items-center gap-4 bg-slate-100 p-1.5 rounded-2xl">
-                    <button onclick="updateQty('s2', -1)" class="w-10 h-10 bg-white rounded-xl shadow-sm font-bold active:scale-90">-</button>
-                    <span id="s2-qty" class="text-lg font-black w-6 text-center text-blue-600">0</span>
-                    <button onclick="updateQty('s2', 1)" class="w-10 h-10 bg-white rounded-xl shadow-sm font-bold active:scale-90">+</button>
-                </div>
-            </div>
-
-            <textarea id="special-notes" placeholder="Special requests or delivery notes..." class="w-full bg-white p-6 rounded-3xl border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm italic" rows="2"></textarea>
+            <textarea id="special-notes" placeholder="Notes..." class="w-full bg-white p-6 rounded-3xl border border-slate-100 outline-none focus:ring-2 focus:ring-blue-500 text-sm italic" rows="2"></textarea>
         </section>
 
-        <section id="bag-summary" class="bg-blue-600 p-8 rounded-[2.5rem] text-white hidden transform transition-all">
+        <section id="bag-summary" class="bg-blue-600 p-8 rounded-[2.5rem] text-white hidden">
             <h3 class="text-[10px] font-black uppercase tracking-[0.3em] mb-4 opacity-70">Order Breakdown</h3>
             <div id="cart-items-list" class="space-y-2 font-bold italic uppercase text-sm"></div>
-            <div id="min-order-warning" class="mt-4 text-[10px] bg-red-500 text-white inline-block px-3 py-1 rounded-full font-bold hidden uppercase">Min Order: 20 THB needed</div>
         </section>
     </main>
 
@@ -80,28 +55,22 @@
                 <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Grand Total</p>
                 <p class="text-3xl font-black text-blue-600" id="total-display">0 THB</p>
             </div>
-            <button onclick="showRules()" class="blue-gradient text-white px-10 py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-blue-200 active:scale-95 transition">Secure Bag</button>
+            <button onclick="showRules()" class="blue-gradient text-white px-10 py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl active:scale-95 transition">Secure Bag</button>
         </div>
     </div>
 
     <div id="rules-modal" class="fixed inset-0 bg-slate-900/60 hidden z-[100] flex items-center justify-center p-6 backdrop-blur-sm">
-        <div class="bg-white p-10 rounded-[3rem] max-w-sm w-full shadow-2xl">
+        <div class="bg-white p-10 rounded-[3rem] max-w-sm w-full shadow-2xl text-center">
             <h2 class="text-2xl font-black mb-6 uppercase italic text-blue-600">The Rules</h2>
-            <ul class="text-slate-500 space-y-4 mb-10 text-sm font-medium">
-                <li class="flex gap-3">✅ <span>Orders close 30m before break.</span></li>
-                <li class="flex gap-3">✅ <span>No classroom entry during lessons.</span></li>
-                <li class="flex gap-3">✅ <span>Have your money ready on arrival.</span></li>
-            </ul>
-            <button id="final-buy-btn" onclick="submitOrder()" class="w-full blue-gradient text-white py-5 rounded-2xl font-black uppercase tracking-widest">Accept & Buy</button>
+            <p class="text-slate-500 mb-8 text-sm">Have your money ready on arrival!</p>
+            <button id="final-buy-btn" onclick="submitOrder()" class="w-full blue-gradient text-white py-5 rounded-2xl font-black uppercase">Accept & Buy</button>
         </div>
     </div>
 
-    <div id="success-modal" class="fixed inset-0 bg-blue-600 hidden z-[200] flex flex-col items-center justify-center text-center p-8">
-        <div class="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center text-white text-5xl mb-8 animate-bounce">✓</div>
-        <h2 class="text-4xl font-black text-white uppercase italic mb-4 tracking-tighter">Order Secured!</h2>
-        <p class="text-blue-100 max-w-xs mb-4">Please prepare your payment:</p>
-        <p class="text-6xl font-black text-white mb-10" id="final-price-display">0฿</p>
-        <button onclick="location.reload()" class="bg-white text-blue-600 px-12 py-4 rounded-full font-black uppercase tracking-widest shadow-2xl">Done</button>
+    <div id="success-modal" class="fixed inset-0 bg-blue-600 hidden z-[200] flex flex-col items-center justify-center text-center p-8 text-white">
+        <h2 class="text-4xl font-black uppercase mb-4 italic">Bag Secured!</h2>
+        <p class="text-6xl font-black mb-10" id="final-price-display">0฿</p>
+        <button onclick="location.reload()" class="bg-white text-blue-600 px-12 py-4 rounded-full font-black uppercase">Done</button>
     </div>
 
     <script>
@@ -110,88 +79,136 @@
             databaseURL: "https://thebagsite-default-rtdb.asia-southeast1.firebasedatabase.app/",
             projectId: "thebagsite"
         };
-        
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let cart = { s1: 0, s2: 0 };
-        let prices = { s1: 20, s2: 35 };
+        // INVENTORY DATA
+        const itemsData = {
+            squid_l: { name: "Spicy Squid (L)", price: 35 },
+            doritos: { name: "Cheese Doritos", price: 30 },
+            squid_g: { name: "Small Squid (Green)", price: 15 },
+            squid_o: { name: "Small Squid (Orange)", price: 15 },
+            squid_r: { name: "Small Squid (Red)", price: 15 },
+            pocky: { name: "Pocky Choco", price: 35 },
+            oreo: { name: "Oreo Pack", price: 15 },
+            lays_s: { name: "Lays Seaweed", price: 15 },
+            lays_n: { name: "Lays Normal", price: 15 },
+            gummy: { name: "Gummy Bears", price: 30 },
+            gum: { name: "Chewing Gum", price: 30 }
+        };
+
+        let cart = {};
+        let stock = {};
         let method = "Pickup";
         let deliveryFee = 0;
-        let total = 0;
+
+        // Load Stock from Firebase
+        db.ref('stock').on('value', (snap) => {
+            stock = snap.val() || {};
+            renderInventory();
+        });
+
+        function renderInventory() {
+            const container = document.getElementById('inventory-container');
+            container.innerHTML = "";
+            for (let id in itemsData) {
+                const s = stock[id] || 0;
+                const item = itemsData[id];
+                container.innerHTML += `
+                    <div class="bg-white p-6 rounded-[2rem] shadow-sm flex justify-between items-center border border-slate-100 ${s <= 0 ? 'sold-out' : ''}">
+                        <div>
+                            <h3 class="font-bold text-slate-800">${item.name}</h3>
+                            <p class="text-blue-600 font-black">${item.price} THB <span class="text-slate-400 text-[10px] ml-2 font-medium">Stock: ${s <= 0 ? 'SOLD OUT' : s}</span></p>
+                        </div>
+                        <div class="flex items-center gap-4 bg-slate-100 p-1.5 rounded-2xl">
+                            <button onclick="updateQty('${id}', -1)" class="w-10 h-10 bg-white rounded-xl shadow-sm font-bold">-</button>
+                            <span id="${id}-qty" class="text-lg font-black w-6 text-center text-blue-600">${cart[id] || 0}</span>
+                            <button onclick="updateQty('${id}', 1)" class="w-10 h-10 bg-white rounded-xl shadow-sm font-bold" ${s <= (cart[id]||0) ? 'disabled' : ''}>+</button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
 
         function updateQty(id, amt) {
-            cart[id] = Math.max(0, cart[id] + amt);
-            document.getElementById(id + '-qty').innerText = cart[id];
-            updateCartDisplay();
+            if (!cart[id]) cart[id] = 0;
+            const newQty = cart[id] + amt;
+            if (newQty >= 0 && newQty <= (stock[id] || 0)) {
+                cart[id] = newQty;
+                document.getElementById(id + '-qty').innerText = cart[id];
+                updateCartDisplay();
+            }
         }
 
         function setMethod(m) {
             method = m;
             deliveryFee = (m === "Delivery") ? 15 : 0;
-            document.getElementById('btn-pickup').className = m === "Pickup" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow-sm transition" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-500 transition";
-            document.getElementById('btn-delivery').className = m === "Delivery" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow-sm transition" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-500 transition";
+            document.getElementById('btn-pickup').className = m === "Pickup" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow-sm" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-500";
+            document.getElementById('btn-delivery').className = m === "Delivery" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow-sm" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-500";
             updateCartDisplay();
         }
 
         function updateCartDisplay() {
-            const list = document.getElementById('cart-items-list');
+            let total = deliveryFee;
+            let itemsHtml = "";
+            for (let id in cart) {
+                if (cart[id] > 0) {
+                    total += cart[id] * itemsData[id].price;
+                    itemsHtml += `<div>${itemsData[id].name} x${cart[id]}</div>`;
+                }
+            }
+            document.getElementById('total-display').innerText = total + " THB";
             const summary = document.getElementById('bag-summary');
-            const warning = document.getElementById('min-order-warning');
-            
-            let items = [];
-            let snackTotal = (cart.s1 * prices.s1) + (cart.s2 * prices.s2);
-            total = snackTotal + deliveryFee;
-
-            if(cart.s1 > 0) items.push(`Chips x${cart.s1}`);
-            if(cart.s2 > 0) items.push(`Energy Bar x${cart.s2}`);
-            
-            if(items.length > 0) {
+            if (total > deliveryFee) {
                 summary.classList.remove('hidden');
-                list.innerHTML = items.map(i => `<div>${i}</div>`).join('') + ` <div class="opacity-50 mt-2 text-[10px]">+ ${method} ${deliveryFee}฿</div>`;
-                warning.className = snackTotal < 20 ? "mt-4 text-[10px] bg-red-500 text-white border-none inline-block px-3 py-1 rounded-full font-bold uppercase" : "hidden";
+                document.getElementById('cart-items-list').innerHTML = itemsHtml;
             } else {
                 summary.classList.add('hidden');
             }
-            document.getElementById('total-display').innerText = total + " THB";
         }
 
         function showRules() {
-            const name = document.getElementById('cust-name').value;
-            let snackTotal = (cart.s1 * prices.s1) + (cart.s2 * prices.s2);
-            if(!name) return alert("Enter your name!");
-            if(snackTotal < 20) return alert("Minimum snack order is 20 THB!");
+            if(!document.getElementById('cust-name').value) return alert("Enter Name!");
             document.getElementById('rules-modal').classList.remove('hidden');
         }
 
-        function submitOrder() {
+        async function submitOrder() {
             const btn = document.getElementById('final-buy-btn');
             btn.disabled = true;
-            btn.innerText = "Securing Bag...";
+            btn.innerText = "Processing...";
+
+            let orderItems = [];
+            let updates = {};
+            
+            for(let id in cart) {
+                if(cart[id] > 0) {
+                    orderItems.push(`${itemsData[id].name} x${cart[id]}`);
+                    updates[`/stock/${id}`] = stock[id] - cart[id];
+                }
+            }
+
+            const total = parseInt(document.getElementById('total-display').innerText);
 
             const orderData = {
                 name: document.getElementById('cust-name').value,
-                grade: document.getElementById('cust-grade').value || "N/A",
-                method: method,
-                time: document.getElementById('delivery-time').value,
-                notes: document.getElementById('special-notes').value || "None",
-                items: `Chips: ${cart.s1}, Bars: ${cart.s2}`,
+                grade: document.getElementById('cust-grade').value,
+                items: orderItems.join(', '),
                 total: total,
-                status: "Pending",
+                method: method,
                 timestamp: Date.now()
             };
 
-            db.ref('orders').push(orderData)
-                .then(() => {
-                    document.getElementById('final-price-display').innerText = total + "฿";
-                    document.getElementById('rules-modal').classList.add('hidden');
-                    document.getElementById('success-modal').classList.remove('hidden');
-                })
-                .catch((error) => {
-                    alert("ERROR: " + error.message);
-                    btn.disabled = false;
-                    btn.innerText = "Accept & Buy";
-                });
+            // Atomically push order and update stock
+            try {
+                await db.ref('orders').push(orderData);
+                await db.ref().update(updates);
+                document.getElementById('final-price-display').innerText = total + "฿";
+                document.getElementById('rules-modal').classList.add('hidden');
+                document.getElementById('success-modal').classList.remove('hidden');
+            } catch(e) {
+                alert("Order Failed: " + e.message);
+                btn.disabled = false;
+            }
         }
     </script>
 </body>
