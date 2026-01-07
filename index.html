@@ -14,19 +14,18 @@
         .hidden { display: none; }
         .sold-out { opacity: 0.4; filter: grayscale(1); pointer-events: none; }
         .snack-card { transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 1px solid rgba(59, 130, 246, 0.05); }
-        .glow-button { box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4); }
         #about-sidebar { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); transform: translateX(-100%); }
         #about-sidebar.open { transform: translateX(0); }
     </style>
 </head>
 <body class="pb-64 overflow-x-hidden">
 
-    <div id="about-sidebar" class="fixed top-0 left-0 h-full w-80 bg-white z-[600] shadow-2xl p-8 flex flex-col text-left">
+    <div id="about-sidebar" class="fixed top-0 left-0 h-full w-80 bg-white z-[600] shadow-2xl p-8 flex flex-col">
         <button onclick="toggleMenu()" class="text-slate-400 text-sm font-black uppercase tracking-widest mb-10">✕ Close</button>
         <div class="flex-1">
             <h2 class="text-3xl font-black text-blue-600 italic uppercase mb-6">The Story.</h2>
             <p class="text-slate-600 leading-relaxed mb-6 font-medium text-sm">
-                Campus life is fast. <span class="text-blue-600 font-bold">The Bag Team</span> was founded by Alon and Sean to bridge the gap between hunger and class. Premium fuel, delivered fast.
+                The Bag Team was founded to make sure you never have to sit through a lesson hungry. Premium snacks, delivered fast.
             </p>
             <div class="space-y-4">
                 <div class="bg-cyan-50 p-4 rounded-2xl border border-cyan-100">
@@ -50,29 +49,26 @@
                 <div class="w-4 h-0.5 bg-blue-600 rounded-full"></div>
             </button>
         </div>
-        <div class="w-1/3 text-center"><h1 class="text-xl font-black text-blue-600 italic tracking-tighter uppercase whitespace-nowrap">The Bag.</h1></div>
+        <div class="w-1/3 text-center"><h1 class="text-xl font-black text-blue-600 italic tracking-tighter uppercase">The Bag.</h1></div>
         <div class="w-1/3 text-right"><img src="logo.png" alt="Logo" class="h-10 w-10 object-contain rounded-lg inline-block"></div>
     </nav>
 
     <main class="max-w-2xl mx-auto p-6">
         <div id="order-flow">
-            <div id="closed-message" class="hidden text-center py-24 px-6 animate-pulse">
+            <div id="closed-message" class="hidden text-center py-24 px-6">
                 <div class="text-7xl mb-6">😴</div>
-                <h2 class="text-3xl font-black text-blue-600 italic uppercase">Restocking...</h2>
-                <p class="text-slate-500 mt-2 font-medium">Closed for now. Back soon!</p>
+                <h2 class="text-3xl font-black text-blue-600 uppercase italic">Restocking...</h2>
             </div>
 
             <div id="store-content" class="space-y-6">
                 <section class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-cyan-100">
-                    <h2 class="font-bold text-slate-400 mb-4 uppercase text-[10px] tracking-widest">1. Your Identity</h2>
+                    <h2 class="font-bold text-slate-400 mb-4 uppercase text-[10px] tracking-widest">1. Identity</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input type="text" id="cust-name" placeholder="Full Name" class="bg-slate-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all">
-                        <input type="text" id="cust-grade" placeholder="Grade (e.g. 10B)" class="bg-slate-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                        <input type="text" id="cust-name" placeholder="Full Name" class="bg-slate-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500">
+                        <input type="text" id="cust-grade" placeholder="Grade (e.g. 10B)" class="bg-slate-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div class="flex gap-2 p-1 bg-slate-100 rounded-2xl mt-4">
-                        <button onclick="setMethod('Pickup')" id="btn-pickup" class="flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow-sm flex flex-col items-center">
-                            Pickup <span class="text-[9px] font-medium text-slate-400">@ Falcons Nest</span>
-                        </button>
+                        <button onclick="setMethod('Pickup')" id="btn-pickup" class="flex-1 py-3 rounded-xl font-bold text-sm bg-white shadow-sm">Pickup</button>
                         <button onclick="setMethod('Delivery')" id="btn-delivery" class="flex-1 py-3 rounded-xl font-bold text-sm text-slate-500">Delivery (+15฿)</button>
                     </div>
                     <div id="loc-container" class="mt-4 hidden"><input type="text" id="cust-loc" placeholder="Room / Area" class="w-full bg-cyan-50 border border-cyan-100 p-4 rounded-2xl outline-none text-sm"></div>
@@ -81,55 +77,41 @@
                 <section class="space-y-4">
                     <h2 class="font-bold text-slate-400 uppercase text-[10px] tracking-widest px-2">2. Available Snacks</h2>
                     <div id="inventory-container" class="grid gap-4"></div>
-                    <textarea id="special-notes" placeholder="Notes for the team..." class="w-full bg-white p-6 rounded-3xl border border-cyan-100 outline-none text-sm italic mt-4" rows="2"></textarea>
                 </section>
             </div>
         </div>
 
-        <div id="receipt-page" class="hidden animate-in fade-in slide-in-from-bottom-8 duration-500">
+        <div id="receipt-page" class="hidden">
             <div class="bg-white rounded-[3rem] shadow-2xl overflow-hidden border-4 border-blue-600">
                 <div class="blue-gradient p-10 text-white text-center">
                     <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">✓</div>
-                    <h2 class="text-3xl font-black uppercase italic tracking-tighter">Bag Secured!</h2>
-                    <p class="text-blue-100 text-[10px] font-bold uppercase tracking-widest mt-1 opacity-80" id="receipt-id"></p>
+                    <h2 class="text-3xl font-black uppercase italic">Bag Secured!</h2>
+                    <p class="text-blue-100 text-[10px] font-bold uppercase tracking-widest mt-1" id="receipt-id"></p>
                 </div>
                 <div class="p-8 space-y-6">
                     <div class="flex justify-between items-end border-b pb-6">
-                        <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Estimated Wait</p><p class="text-4xl font-black text-blue-600" id="est-time">--</p></div>
-                        <div class="text-right"><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Price</p><p class="text-4xl font-black text-slate-800" id="receipt-total">0฿</p></div>
+                        <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Wait Time</p><p class="text-4xl font-black text-blue-600" id="est-time">--</p></div>
+                        <div class="text-right"><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">To Pay</p><p class="text-4xl font-black text-slate-800" id="receipt-total">0฿</p></div>
                     </div>
                     <div class="space-y-4">
                         <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Items</p><p class="font-bold text-slate-700 text-sm" id="receipt-items"></p></div>
                         <div class="bg-blue-50 p-5 rounded-3xl border border-blue-100">
-                            <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Pickup / Delivery Point</p>
+                            <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Location</p>
                             <p class="font-black text-slate-800 italic" id="receipt-location"></p>
                         </div>
                     </div>
                     <div class="pt-4 text-center">
-                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Show this screen to Alon or Sean</p>
-                        <button onclick="location.reload()" class="mt-8 text-blue-600 font-black uppercase text-xs tracking-widest border-b-2 border-blue-600 pb-1">Order More</button>
+                        <button onclick="location.reload()" class="text-blue-600 font-black uppercase text-xs tracking-widest border-b-2 border-blue-600 pb-1">Order More</button>
                     </div>
                 </div>
             </div>
         </div>
     </main>
 
-    <div id="chat-widget" class="fixed bottom-32 right-6 z-[500]">
-        <button onclick="toggleChat()" class="w-14 h-14 blue-gradient rounded-full shadow-2xl flex items-center justify-center text-white text-2xl">💬</button>
-        <div id="chat-box" class="hidden absolute bottom-20 right-0 w-72 bg-white rounded-[2rem] shadow-2xl border border-blue-100 overflow-hidden flex flex-col">
-            <div class="blue-gradient p-4 text-white font-bold text-xs uppercase tracking-widest">Live Support</div>
-            <div id="chat-messages" class="h-64 overflow-y-auto p-4 space-y-2 flex flex-col bg-slate-50"></div>
-            <div class="p-3 border-t bg-white flex gap-2">
-                <input type="text" id="chat-input" placeholder="Message us..." class="flex-1 bg-slate-100 rounded-xl px-3 py-2 text-xs outline-none">
-                <button onclick="sendChatMessage()" class="bg-blue-600 text-white px-3 rounded-xl font-bold text-xs">Send</button>
-            </div>
-        </div>
-    </div>
-
     <div id="bottom-bar" class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl p-8 border-t z-50">
         <div class="max-w-2xl mx-auto flex justify-between items-center">
-            <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Grand Total</p><p class="text-3xl font-black text-blue-600" id="total-display">0 THB</p></div>
-            <button onclick="showRules()" class="glow-button blue-gradient text-white px-10 py-4 rounded-2xl font-black uppercase tracking-widest transition-all active:scale-95">Secure Bag</button>
+            <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total</p><p class="text-3xl font-black text-blue-600" id="total-display">0 THB</p></div>
+            <button onclick="showRules()" class="blue-gradient text-white px-10 py-4 rounded-2xl font-black uppercase tracking-widest">Secure Bag</button>
         </div>
     </div>
 
@@ -139,7 +121,6 @@
             <ul class="text-slate-500 mb-8 text-sm space-y-2 text-left font-medium">
                 <li>• Cash must be ready.</li>
                 <li>• No pickups during lessons.</li>
-                <li>• No refunds after bag secured.</li>
             </ul>
             <button id="final-buy-btn" onclick="submitOrder()" class="w-full blue-gradient text-white py-5 rounded-2xl font-black uppercase tracking-widest">Accept & Buy</button>
         </div>
@@ -161,8 +142,6 @@
         let cart = {}, stock = {}, method = "Pickup", deliveryFee = 0, activeOrderCount = 0;
 
         function toggleMenu() { document.getElementById('about-sidebar').classList.toggle('open'); }
-        function toggleChat() { document.getElementById('chat-box').classList.toggle('hidden'); }
-
         db.ref('orders').on('value', snap => { activeOrderCount = snap.val() ? Object.keys(snap.val()).length : 0; });
         db.ref('settings/isOpen').on('value', snap => {
             const open = snap.val();
@@ -211,31 +190,12 @@
 
         function showRules() {
             if(!document.getElementById('cust-name').value) return alert("Enter Name");
-            if(method === 'Delivery' && !document.getElementById('cust-loc').value) return alert("Enter Location");
             document.getElementById('rules-modal').classList.remove('hidden');
         }
 
-        function sendChatMessage() {
-            const msg = document.getElementById('chat-input').value;
-            const name = document.getElementById('cust-name').value || "Guest";
-            if(!msg) return;
-            db.ref('chats').push({ sender: name, message: msg, timestamp: Date.now(), isAdmin: false });
-            document.getElementById('chat-input').value = "";
-        }
-
-        db.ref('chats').limitToLast(15).on('value', snap => {
-            const container = document.getElementById('chat-messages'); container.innerHTML = "";
-            snap.forEach(child => {
-                const c = child.val();
-                const align = c.isAdmin ? 'self-start bg-white text-slate-800 border' : 'self-end bg-blue-600 text-white';
-                container.innerHTML += `<div class="max-w-[85%] p-3 rounded-2xl text-[11px] font-medium ${align}">${c.message}</div>`;
-            });
-            container.scrollTop = container.scrollHeight;
-        });
-
         async function submitOrder() {
             const btn = document.getElementById('final-buy-btn');
-            btn.disabled = true; btn.innerText = "Securing...";
+            btn.disabled = true;
             const freshSnap = await db.ref('stock').once('value');
             const fs = freshSnap.val() || {};
             
@@ -247,9 +207,9 @@
                     total += (cart[id] * itemsData[id].price);
                 }
             }
-            if(itemsArr.length === 0) return alert("Bag is empty!");
+            if(itemsArr.length === 0) return alert("Empty!");
 
-            const finalLoc = (method === 'Pickup') ? "The Falcons Nest (Cafe)" : document.getElementById('cust-loc').value;
+            const finalLoc = (method === 'Pickup') ? "Falcons Nest" : document.getElementById('cust-loc').value;
             const order = { name: document.getElementById('cust-name').value, loc: finalLoc, items: itemsArr.join(', '), total, timestamp: Date.now() };
 
             const newRef = await db.ref('orders').push(order);
@@ -264,7 +224,7 @@
             document.getElementById('bottom-bar').classList.add('hidden');
             document.getElementById('rules-modal').classList.add('hidden');
             document.getElementById('main-nav').classList.add('hidden');
-            document.getElementById('receipt-id').innerText = "ID: #" + newRef.key.slice(-5).toUpperCase();
+            document.getElementById('receipt-id').innerText = "ID: #" + newRef.key.slice(-4).toUpperCase();
             document.getElementById('receipt-total').innerText = total + "฿";
             document.getElementById('receipt-items').innerText = itemsArr.join(', ');
             document.getElementById('receipt-location').innerText = finalLoc;
