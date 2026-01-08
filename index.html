@@ -1,153 +1,297 @@
-<script>
-    const firebaseConfig = { apiKey: "AIzaSyAFGoJyyvtspQSauHUrWvSBWNF2taGJOYE", databaseURL: "https://thebagsite-default-rtdb.asia-southeast1.firebasedatabase.app/", projectId: "thebagsite" };
-    firebase.initializeApp(firebaseConfig); const db = firebase.database();
-    
-    let cart = {}, stock = {}, isFlash = false, method = "Pickup", bestSellerId = "";
-    let flashInterval = null; // Added to track timer
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE BAG | Beta v1.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+        :root { --bg: #e0f7fa; --card: #ffffff; --text: #0f172a; --accent: #2563eb; --glass: rgba(255, 255, 255, 0.4); }
+        .dark-mode { --bg: #020617; --card: #0f172a; --text: #f8fafc; --accent: #60a5fa; --glass: rgba(15, 23, 42, 0.4); }
+        .flash-active { --accent: #ef4444 !important; }
+        
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text); transition: all 0.3s ease; }
+        .bg-card { background-color: var(--card); border: 1px solid rgba(0,0,0,0.05); }
+        #sidebar { transition: transform 0.4s ease; transform: translateX(-100%); z-index: 1000; background: var(--card); }
+        #sidebar.open { transform: translateX(0); }
+        
+        .marquee { background: var(--accent); color: white; padding: 8px 0; font-weight: 800; text-transform: uppercase; overflow: hidden; transition: background 0.3s; }
+        .marquee-content { display: inline-block; animation: marquee 15s linear infinite; white-space: nowrap; }
+        @keyframes marquee { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
 
-    db.ref('settings/storeOpen').on('value', snap => {
-        const isOpen = snap.val();
-        document.getElementById('closed-screen').classList.toggle('hidden', isOpen);
-    });
+        .glass-bottom { background: var(--glass); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border-top: 1px solid rgba(255,255,255,0.1); }
+        .snack-img { width: 90px; height: 110px; object-fit: cover; border-radius: 1.5rem; background: #f1f5f9; }
+        .pop-btn { transition: transform 0.1s; }
+        .pop-btn:active { transform: scale(0.95); }
+        
+        #closed-screen { z-index: 9999; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+    </style>
+</head>
+<body class="pb-64">
+    <div id="closed-screen" class="fixed inset-0 bg-slate-900/80 hidden flex flex-col items-center justify-center text-center p-10">
+        <h1 class="text-white text-6xl font-black italic uppercase">Shop Closed</h1>
+        <p class="text-slate-400 font-bold mt-4 uppercase tracking-widest">We are currently restockin' or takin' a break.</p>
+    </div>
 
-    db.ref('orders').on('value', snap => {
-        const orders = snap.val() || {};
-        const counts = {};
-        const fourHoursAgo = Date.now() - (4 * 60 * 60 * 1000);
-        Object.values(orders).forEach(o => {
-            if(o.timestamp > fourHoursAgo && o.items_list) {
-                o.items_list.forEach(id => { counts[id] = (counts[id] || 0) + 1; });
-            }
+    <div id="full-cancel-screen" class="fixed inset-0 bg-slate-950 hidden flex flex-col items-center justify-center text-center z-[5000] p-10">
+        <div class="w-20 h-20 border-4 border-red-500/30 rounded-full flex items-center justify-center mb-6">
+            <span class="text-red-500 text-4xl font-black">!</span>
+        </div>
+        <h1 class="text-white text-6xl font-black italic uppercase">Order Declined</h1>
+        <p class="text-slate-400 font-bold mt-4 uppercase tracking-widest text-sm">Your order was canceled by the staff team.</p>
+        <button onclick="location.reload()" class="mt-10 bg-slate-800 text-white border border-slate-700 px-12 py-5 rounded-2xl font-black hover:bg-slate-700 transition-all">BACK TO STORE</button>
+    </div>
+
+    <div class="marquee" id="top-marquee"><div class="marquee-content" id="m-text">THE BAG CAMPUS FUEL • BETA v1.0 • LUNCH DELIVERY ACTIVE •</div></div>
+
+    <div id="sidebar" class="fixed top-0 left-0 h-full w-80 shadow-2xl p-8 flex flex-col">
+        <button onclick="toggleMenu(); playPop()" class="font-black text-xs opacity-50 mb-10 text-left">✕ CLOSE</button>
+        <h2 class="text-3xl font-black italic mb-4" style="color:var(--accent)">THE BAG TEAM.</h2>
+        <p class="text-[15px] font-extrabold mb-8 leading-tight">Lunch options were boring. We fixed it. We source and deliver the premium snacks you actually want directly to you.</p>
+        <div class="space-y-4 mb-10">
+            <div class="p-5 rounded-3xl bg-slate-500/10"><p class="text-[10px] uppercase font-black opacity-50">Founder</p><p class="text-xl font-black italic">Alon Katz</p></div>
+            <div class="p-5 rounded-3xl bg-slate-500/10"><p class="text-[10px] uppercase font-black opacity-50">Co-Founder</p><p class="text-xl font-black italic">Sean Raynes</p></div>
+        </div>
+        <div class="mt-auto border-t pt-6 space-y-3">
+            <p class="text-xs font-black uppercase opacity-60">🎟️ Promo Codes: Coming Soon</p>
+            <p class="text-xs font-black uppercase opacity-60">⚖️ Rules: No class orders. Cash only.</p>
+        </div>
+    </div>
+
+    <nav class="bg-card p-4 sticky top-0 z-50 flex items-center px-6">
+        <div class="w-1/3"><button onclick="toggleMenu(); playPop()" class="space-y-1.5">
+            <div class="h-0.5 w-6" style="background:var(--accent)"></div><div class="h-0.5 w-6" style="background:var(--accent)"></div><div class="h-0.5 w-6" style="background:var(--accent)"></div>
+        </button></div>
+        <div class="w-1/3 text-center"><h1 class="text-xl font-black italic uppercase" style="color:var(--accent)">THE BAG.</h1></div>
+        <div class="w-1/3 text-right"><button onclick="toggleDarkMode(); playPop()" class="text-xl pop-btn">🌙</button></div>
+    </nav>
+
+    <main class="max-w-xl mx-auto p-6">
+        <div id="flash-timer-box" class="hidden mb-6 bg-red-600 p-8 rounded-[3rem] text-center text-white shadow-xl animate-pulse">
+            <p class="text-xs font-black uppercase tracking-widest mb-1">Flash Sale Ending In</p>
+            <h2 id="timer-display" class="text-5xl font-black italic">00:00</h2>
+        </div>
+
+        <div id="order-flow">
+            <section class="bg-card p-6 rounded-[2.5rem] mb-6 shadow-sm">
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <input type="text" id="cust-name" placeholder="Name" class="bg-slate-500/10 p-4 rounded-2xl outline-none font-bold">
+                    <input type="text" id="cust-grade" placeholder="Grade" class="bg-slate-500/10 p-4 rounded-2xl outline-none font-bold">
+                </div>
+                <div class="flex gap-2 p-1.5 bg-slate-500/10 rounded-2xl">
+                    <button onclick="setMethod('Pickup'); playPop()" id="btn-p" class="flex-1 py-4 text-[10px] font-black uppercase rounded-xl" style="background:var(--accent); color:white">Pickup</button>
+                    <button onclick="setMethod('Delivery'); playPop()" id="btn-d" class="flex-1 py-4 text-[10px] font-black uppercase rounded-xl">Delivery (+15฿)</button>
+                </div>
+            </section>
+            
+            <div id="inventory" class="space-y-4"></div>
+        </div>
+
+        <div id="receipt" class="hidden text-center py-16 bg-card rounded-[4rem] border-8 shadow-2xl overflow-hidden" style="border-color:var(--accent)">
+            <div class="bg-blue-600 py-4 mb-8">
+                <h2 class="text-4xl font-black uppercase italic text-white tracking-tighter">BAG SECURED.</h2>
+            </div>
+            
+            <div class="px-8">
+                <div class="p-10 bg-slate-500/5 rounded-[3rem] mb-8 border border-slate-500/10">
+                    <p class="text-[11px] font-black uppercase opacity-40 tracking-[0.2em] mb-2">Estimated Arrival</p>
+                    <p id="wait-time" class="text-7xl font-black italic tracking-tighter" style="color:var(--accent)">-- mins</p>
+                </div>
+
+                <div class="space-y-4 text-left bg-slate-500/5 p-8 rounded-[2.5rem] border border-slate-500/10 mb-8">
+                    <p class="text-xs font-black uppercase opacity-60 flex items-center gap-2"><span>⚖️</span> Rules & Info</p>
+                    <ul class="text-[13px] font-bold space-y-2 opacity-80">
+                        <li>• Prepare exact cash for faster checkout.</li>
+                        <li>• No class orders: Meet at the designated spot.</li>
+                        <li>• If delivery, stay near your phone for the call.</li>
+                    </ul>
+                </div>
+
+                <button onclick="location.reload()" class="font-black uppercase text-sm tracking-widest opacity-40 hover:opacity-100 transition-all">Place Another Order</button>
+            </div>
+        </div>
+    </main>
+
+    <div id="bottom-bar" class="fixed bottom-0 left-0 right-0 p-6 glass-bottom z-50">
+        <div class="max-w-xl mx-auto flex justify-between items-center">
+            <div class="p-4 rounded-2xl">
+                <p class="text-[9px] font-black uppercase opacity-60">Total Amount</p>
+                <div class="flex items-center gap-2">
+                   <p class="text-2xl font-black" id="total-val" style="color:var(--accent)">0 THB</p>
+                   <span id="total-sale-tag" class="hidden text-[10px] bg-red-600 text-white px-2 py-1 rounded-lg font-black animate-pulse">-10%</span>
+                </div>
+            </div>
+            <button onclick="submitOrder(); playPop()" class="px-10 py-5 rounded-2xl font-black uppercase text-xs shadow-lg text-white pop-btn" style="background:var(--accent)">Secure Bag</button>
+        </div>
+    </div>
+
+    <audio id="pop-sfx" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3" preload="auto"></audio>
+
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyAFGoJyyvtspQSauHUrWvSBWNF2taGJOYE", databaseURL: "https://thebagsite-default-rtdb.asia-southeast1.firebasedatabase.app/", projectId: "thebagsite" };
+        firebase.initializeApp(firebaseConfig); const db = firebase.database();
+        
+        let cart = {}, stock = {}, isFlash = false, method = "Pickup", bestSellerId = "";
+        let flashInterval = null; // Fix for glitching timer
+
+        // LISTEN FOR SHOP STATUS
+        db.ref('settings/storeOpen').on('value', snap => {
+            const isOpen = snap.val();
+            document.getElementById('closed-screen').classList.toggle('hidden', isOpen);
         });
-        bestSellerId = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b, "");
-        renderInventory();
-    });
-    
-    const itemsData = {
-        squid_l_red: { name: "Large Squid (Red)", price: 35, img: "squid_l_red.png" },
-        squid_l_orange: { name: "Large Squid (Orange)", price: 35, img: "squid_l_orange.png" },
-        squid_g: { name: "Small Squid (Green)", price: 15, img: "squid_g.png" },
-        squid_o: { name: "Small Squid (Orange)", price: 15, img: "squid_o.png" },
-        squid_r: { name: "Small Squid (Red)", price: 15, img: "squid_r.png" },
-        doritos: { name: "Cheese Doritos", price: 30, img: "doritos.png" },
-        pocky: { name: "Pocky Choco", price: 35, img: "pocky.png" },
-        oreo: { name: "Oreo Pack", price: 15, img: "oreo.png" },
-        lays_s: { name: "Lays Seaweed", price: 15, img: "lays_s.png" },
-        lays_n: { name: "Lays Normal", price: 15, img: "lays_n.png" },
-        gummy: { name: "Gummy Bears", price: 30, img: "gummy.png" },
-        gum: { name: "Chewing Gum", price: 30, img: "gum.png" }
-    };
 
-    const pop = document.getElementById('pop-sfx');
-    document.addEventListener('click', () => { pop.play().then(() => { pop.pause(); pop.currentTime = 0; }); }, { once: true });
-    function playPop() { pop.currentTime = 0; pop.play().catch(()=>{}); }
-    function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
-    function toggleDarkMode() { document.body.classList.toggle('dark-mode'); }
-
-    db.ref('settings/flashSale').on('value', snap => {
-        const data = snap.val() || {}; 
-        isFlash = data.active && data.end > Date.now();
-        
-        // FIX: Clear existing interval to stop timer glitching
-        if(flashInterval) clearInterval(flashInterval);
-
-        document.body.classList.toggle('flash-active', isFlash);
-        document.getElementById('flash-timer-box').classList.toggle('hidden', !isFlash);
-        document.getElementById('total-sale-tag').classList.toggle('hidden', !isFlash);
-        
-        if(isFlash) { 
-            const updateTimer = () => {
-                const diff = data.end - Date.now();
-                if(diff <= 0) {
-                    clearInterval(flashInterval);
-                    document.getElementById('flash-timer-box').classList.add('hidden');
-                    return;
+        // BEST SELLER LOGIC (Last 4 Hours)
+        db.ref('orders').on('value', snap => {
+            const orders = snap.val() || {};
+            const counts = {};
+            const fourHoursAgo = Date.now() - (4 * 60 * 60 * 1000);
+            
+            Object.values(orders).forEach(o => {
+                if(o.timestamp > fourHoursAgo && o.items_list) {
+                    o.items_list.forEach(id => { counts[id] = (counts[id] || 0) + 1; });
                 }
-                const m = Math.floor(diff/60000), s = Math.floor((diff%60000)/1000);
-                document.getElementById('timer-display').innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-            };
-            updateTimer();
-            flashInterval = setInterval(updateTimer, 1000); 
+            });
+            bestSellerId = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b, "");
+            renderInventory();
+        });
+        
+        const itemsData = {
+            squid_l_red: { name: "Large Squid (Red)", price: 35, img: "squid_l_red.png" },
+            squid_l_orange: { name: "Large Squid (Orange)", price: 35, img: "squid_l_orange.png" },
+            squid_g: { name: "Small Squid (Green)", price: 15, img: "squid_g.png" },
+            squid_o: { name: "Small Squid (Orange)", price: 15, img: "squid_o.png" },
+            squid_r: { name: "Small Squid (Red)", price: 15, img: "squid_r.png" },
+            doritos: { name: "Cheese Doritos", price: 30, img: "doritos.png" },
+            pocky: { name: "Pocky Choco", price: 35, img: "pocky.png" },
+            oreo: { name: "Oreo Pack", price: 15, img: "oreo.png" },
+            lays_s: { name: "Lays Seaweed", price: 15, img: "lays_s.png" },
+            lays_n: { name: "Lays Normal", price: 15, img: "lays_n.png" },
+            gummy: { name: "Gummy Bears", price: 30, img: "gummy.png" },
+            gum: { name: "Chewing Gum", price: 30, img: "gum.png" }
+        };
+
+        const pop = document.getElementById('pop-sfx');
+        document.addEventListener('click', () => { pop.play().then(() => { pop.pause(); pop.currentTime = 0; }); }, { once: true });
+        function playPop() { pop.currentTime = 0; pop.play().catch(()=>{}); }
+        function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
+        function toggleDarkMode() { document.body.classList.toggle('dark-mode'); }
+
+        db.ref('settings/flashSale').on('value', snap => {
+            const data = snap.val() || {}; 
+            isFlash = data.active && data.end > Date.now();
+            
+            // Fix: Always clear previous interval when database settings change
+            if(flashInterval) clearInterval(flashInterval);
+
+            document.body.classList.toggle('flash-active', isFlash);
+            document.getElementById('flash-timer-box').classList.toggle('hidden', !isFlash);
+            document.getElementById('total-sale-tag').classList.toggle('hidden', !isFlash);
+            
+            if(isFlash) { 
+                const updateTimer = () => {
+                    const diff = data.end - Date.now();
+                    if(diff <= 0) {
+                        clearInterval(flashInterval);
+                        document.getElementById('flash-timer-box').classList.add('hidden');
+                        return;
+                    }
+                    const m = Math.floor(diff/60000), s = Math.floor((diff%60000)/1000);
+                    document.getElementById('timer-display').innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+                };
+                updateTimer(); // Run once immediately
+                flashInterval = setInterval(updateTimer, 1000); 
+            }
+            renderInventory();
+            updateCartDisplay();
+        });
+
+        db.ref('stock').on('value', snap => { stock = snap.val() || {}; renderInventory(); });
+
+        function renderInventory() {
+            const container = document.getElementById('inventory'); container.innerHTML = "";
+            Object.keys(itemsData).forEach(id => {
+                const s = stock[id] || 0; 
+                const p = isFlash ? Math.floor(itemsData[id].price * 0.9) : itemsData[id].price;
+                container.innerHTML += `
+                <div class="bg-card p-4 rounded-[2.5rem] flex items-center gap-4 ${s <= 0 ? 'opacity-30 grayscale pointer-events-none' : ''}">
+                    <img src="${itemsData[id].img}" class="snack-img">
+                    <div class="flex-1">
+                        <div class="flex gap-2 mb-1">
+                            ${s <= 2 && s > 0 ? '<span class="bg-red-500 text-white text-[8px] px-2 py-0.5 rounded-full font-black animate-bounce">BUY NOW (Only '+s+')</span>' : ''}
+                            ${id === bestSellerId ? '<span class="bg-blue-600 text-white text-[8px] px-2 py-0.5 rounded-full font-black uppercase">Popular</span>' : ''}
+                        </div>
+                        <h3 class="font-black text-sm uppercase italic">${itemsData[id].name}</h3>
+                        <div class="flex items-center gap-2">
+                           <p class="font-black text-lg" style="color:var(--accent)">${p}฿</p>
+                           ${isFlash ? '<span class="text-[9px] bg-red-600 text-white px-1.5 py-0.5 rounded-md font-black italic">-10%</span>' : ''}
+                        </div>
+                        <p class="text-[10px] font-black opacity-40 uppercase tracking-tighter">Stock: ${s}</p>
+                    </div>
+                    <div class="flex items-center gap-3 bg-slate-500/10 p-2 rounded-2xl">
+                        <button onclick="updateQty('${id}',-1);playPop()" class="w-8 h-8 font-black">-</button>
+                        <span class="font-black">${cart[id] || 0}</span>
+                        <button onclick="updateQty('${id}',1);playPop()" class="w-8 h-8 font-black">+</button>
+                    </div>
+                </div>`;
+            });
         }
-        renderInventory();
-        updateCartDisplay();
-    });
 
-    db.ref('stock').on('value', snap => { stock = snap.val() || {}; renderInventory(); });
+        function updateQty(id, amt) {
+            cart[id] = Math.max(0, Math.min(stock[id], (cart[id] || 0) + amt));
+            updateCartDisplay(); renderInventory();
+        }
 
-    function renderInventory() {
-        const container = document.getElementById('inventory'); container.innerHTML = "";
-        Object.keys(itemsData).forEach(id => {
-            const s = stock[id] || 0; 
-            const p = isFlash ? Math.floor(itemsData[id].price * 0.9) : itemsData[id].price;
-            container.innerHTML += `
-            <div class="bg-card p-4 rounded-[2.5rem] flex items-center gap-4 ${s <= 0 ? 'opacity-30 grayscale pointer-events-none' : ''}">
-                <img src="${itemsData[id].img}" class="snack-img">
-                <div class="flex-1">
-                    <div class="flex gap-2 mb-1">
-                        ${s <= 2 && s > 0 ? '<span class="bg-red-500 text-white text-[8px] px-2 py-0.5 rounded-full font-black animate-bounce">BUY NOW (Only '+s+')</span>' : ''}
-                        ${id === bestSellerId ? '<span class="bg-blue-600 text-white text-[8px] px-2 py-0.5 rounded-full font-black uppercase">Popular</span>' : ''}
-                    </div>
-                    <h3 class="font-black text-sm uppercase italic">${itemsData[id].name}</h3>
-                    <div class="flex items-center gap-2">
-                       <p class="font-black text-lg" style="color:var(--accent)">${p}฿</p>
-                       ${isFlash ? '<span class="text-[9px] bg-red-600 text-white px-1.5 py-0.5 rounded-md font-black italic">-10%</span>' : ''}
-                    </div>
-                    <p class="text-[10px] font-black opacity-40 uppercase tracking-tighter">Stock: ${s}</p>
-                </div>
-                <div class="flex items-center gap-3 bg-slate-500/10 p-2 rounded-2xl">
-                    <button onclick="updateQty('${id}',-1);playPop()" class="w-8 h-8 font-black">-</button>
-                    <span class="font-black">${cart[id] || 0}</span>
-                    <button onclick="updateQty('${id}',1);playPop()" class="w-8 h-8 font-black">+</button>
-                </div>
-            </div>`;
-        });
-    }
+        function updateCartDisplay() {
+            let t = (method === "Delivery" ? 15 : 0);
+            Object.keys(cart).forEach(k => t += (cart[k] || 0) * (isFlash ? Math.floor(itemsData[k].price * 0.9) : itemsData[k].price));
+            document.getElementById('total-val').innerText = t + " THB";
+        }
 
-    function updateQty(id, amt) {
-        cart[id] = Math.max(0, Math.min(stock[id], (cart[id] || 0) + amt));
-        updateCartDisplay(); renderInventory();
-    }
+        function setMethod(m) { 
+            method = m; 
+            document.getElementById('btn-p').style.background = m === 'Pickup' ? 'var(--accent)' : 'transparent';
+            document.getElementById('btn-p').style.color = m === 'Pickup' ? 'white' : 'inherit';
+            document.getElementById('btn-d').style.background = m === 'Delivery' ? 'var(--accent)' : 'transparent';
+            document.getElementById('btn-d').style.color = m === 'Delivery' ? 'white' : 'inherit';
+            updateCartDisplay();
+        }
 
-    function updateCartDisplay() {
-        let t = (method === "Delivery" ? 15 : 0);
-        Object.keys(cart).forEach(k => t += (cart[k] || 0) * (isFlash ? Math.floor(itemsData[k].price * 0.9) : itemsData[k].price));
-        document.getElementById('total-val').innerText = t + " THB";
-    }
+        async function submitOrder() {
+            const n = document.getElementById('cust-name').value;
+            const itemsInCart = Object.keys(cart).filter(k=>cart[k]>0);
+            if(!n || itemsInCart.length === 0) return alert("Add items and name!");
+            
+            const snap = await db.ref('orders').once('value');
+            const active = Object.values(snap.val() || {}).filter(o => o.status === 'active').length;
+            const wait = (active * 3) + 5;
 
-    function setMethod(m) { 
-        method = m; 
-        document.getElementById('btn-p').style.background = m === 'Pickup' ? 'var(--accent)' : 'transparent';
-        document.getElementById('btn-p').style.color = m === 'Pickup' ? 'white' : 'inherit';
-        document.getElementById('btn-d').style.background = m === 'Delivery' ? 'var(--accent)' : 'transparent';
-        document.getElementById('btn-d').style.color = m === 'Delivery' ? 'white' : 'inherit';
-        updateCartDisplay();
-    }
+            // DEDUCT STOCK & SAVE ORDER
+            const itemsListForBestSeller = [];
+            itemsInCart.forEach(id => {
+                const qty = cart[id];
+                for(let i=0; i<qty; i++) itemsListForBestSeller.push(id);
+                db.ref('stock/'+id).transaction(current => (current || 0) - qty);
+            });
 
-    async function submitOrder() {
-        const n = document.getElementById('cust-name').value;
-        const itemsInCart = Object.keys(cart).filter(k=>cart[k]>0);
-        if(!n || itemsInCart.length === 0) return alert("Add items and name!");
-        const snap = await db.ref('orders').once('value');
-        const active = Object.values(snap.val() || {}).filter(o => o.status === 'active').length;
-        const wait = (active * 3) + 5;
-        const itemsListForBestSeller = [];
-        itemsInCart.forEach(id => {
-            const qty = cart[id];
-            for(let i=0; i<qty; i++) itemsListForBestSeller.push(id);
-            db.ref('stock/'+id).transaction(current => (current || 0) - qty);
-        });
-        const ref = await db.ref('orders').push({ 
-            name: n, grade: document.getElementById('cust-grade').value, 
-            items: itemsInCart.map(k=>`${itemsData[k].name} x${cart[k]}`).join(', '),
-            items_list: itemsListForBestSeller,
-            status: 'active', timestamp: Date.now(), location: method
-        });
-        document.getElementById('order-flow').classList.add('hidden');
-        document.getElementById('bottom-bar').classList.add('hidden');
-        document.getElementById('receipt').classList.remove('hidden');
-        document.getElementById('wait-time').innerText = wait + " mins";
-        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-        db.ref('orders/'+ref.key).on('value', s => { if(s.val()?.status === 'cancelled') document.getElementById('full-cancel-screen').classList.remove('hidden'); });
-    }
-</script>
+            const ref = await db.ref('orders').push({ 
+                name: n, grade: document.getElementById('cust-grade').value, 
+                items: itemsInCart.map(k=>`${itemsData[k].name} x${cart[k]}`).join(', '),
+                items_list: itemsListForBestSeller,
+                status: 'active', timestamp: Date.now(), location: method
+            });
+
+            document.getElementById('order-flow').classList.add('hidden');
+            document.getElementById('bottom-bar').classList.add('hidden'); 
+            document.getElementById('receipt').classList.remove('hidden');
+            document.getElementById('wait-time').innerText = wait + " mins";
+            
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+            db.ref('orders/'+ref.key).on('value', s => { if(s.val()?.status === 'cancelled') document.getElementById('full-cancel-screen').classList.remove('hidden'); });
+        }
+    </script>
+</body>
+</html>
