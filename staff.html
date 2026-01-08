@@ -114,45 +114,54 @@
         });
         function updateStatus(id, s) { db.ref('orders/'+id).update({ status: s }); }
 
-        const items = ['squid_r', 'squid_o', 'squid_g', 'squid_l_red', 'squid_l_orange', 'doritos', 'pocky', 'oreo', 'lays_s', 'lays_n', 'gummy', 'gum'];
-        let currentStockData = {};
-
+        const items = ['squid_l_red', 'squid_l_orange', 'squid_g', 'squid_o', 'squid_r', 'doritos', 'pocky', 'oreo', 'lays_s', 'lays_n', 'gummy', 'gum'];
+        
         db.ref('stock').on('value', snap => {
-            currentStockData = snap.val() || {};
+            const data = snap.val() || {};
             const list = document.getElementById('stock-list');
             list.innerHTML = "";
             items.forEach(id => {
-                const count = currentStockData[id] || 0;
+                const count = data[id] || 0;
                 list.innerHTML += `
                 <div class="flex items-center justify-between bg-slate-900/40 p-3 rounded-xl border border-slate-800">
                     <span class="font-bold text-[10px] uppercase italic opacity-70">${id.replace(/_/g,' ')}</span>
                     <div class="flex items-center gap-3">
-                        <button onclick="adjLocalStock('${id}', -1)" class="w-6 h-6 bg-slate-800 rounded flex items-center justify-center font-black">-</button>
-                        <input type="number" id="manual-${id}" value="${count}" class="w-12 bg-transparent text-center font-black text-blue-500 outline-none">
-                        <button onclick="adjLocalStock('${id}', 1)" class="w-6 h-6 bg-slate-800 rounded flex items-center justify-center font-black">+</button>
+                        <button onclick="adjStock('${id}', -1)" class="w-6 h-6 bg-slate-800 rounded flex items-center justify-center font-black">-</button>
+                        <input type="number" id="manual-${id}" placeholder="${count}" class="w-12 bg-transparent text-center font-black text-blue-500 outline-none">
+                        <button onclick="adjStock('${id}', 1)" class="w-6 h-6 bg-slate-800 rounded flex items-center justify-center font-black">+</button>
                     </div>
                 </div>`;
             });
         });
 
-        // Changes the number in the box WITHOUT saving to database yet
-        function adjLocalStock(id, amt) {
-            const input = document.getElementById('manual-'+id);
-            let currentVal = parseInt(input.value) || 0;
-            input.value = Math.max(0, currentVal + amt);
+        // Fixed: Plus/Minus now updates the database instantly without clearing other inputs
+        function adjStock(id, amt) { 
+            db.ref('stock/'+id).transaction(current => {
+                return Math.max(0, (current || 0) + amt);
+            });
         }
         
-        // Saves everything in the boxes to the student side
+        // Fixed: Update All now ignores blank boxes instead of setting them to 0
         function updateAllStock() {
             const updates = {};
+            let hasUpdate = false;
             items.forEach(id => {
-                const input = document.getElementById('manual-'+id);
-                updates[id] = parseInt(input.value) || 0;
+                const val = document.getElementById('manual-'+id).value;
+                if(val !== "") {
+                    updates[id] = parseInt(val);
+                    hasUpdate = true;
+                }
             });
 
-            db.ref('stock').update(updates).then(() => {
-                alert("Stock Levels Synced to Student Side!");
-            });
+            if(hasUpdate) {
+                db.ref('stock').update(updates).then(() => {
+                    alert("Stock Levels Updated!");
+                    // Clear inputs after update to show placeholders again
+                    items.forEach(id => document.getElementById('manual-'+id).value = "");
+                });
+            } else {
+                alert("Please type a number in a box first!");
+            }
         }
 
         function resetAllStock() {
