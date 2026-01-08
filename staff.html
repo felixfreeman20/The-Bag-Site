@@ -10,13 +10,15 @@
         body { background: #020617; color: #f8fafc; font-family: sans-serif; }
         .card-bg { background: #0f172a; border: 1px solid #1e293b; border-radius: 2rem; }
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .stock-row { background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(59, 130, 246, 0.1); }
+        .stock-row:hover { border-color: rgba(59, 130, 246, 0.5); }
     </style>
 </head>
 <body class="p-6">
     <header class="flex justify-between items-center mb-10 pb-6 border-b border-slate-800">
         <h1 class="text-3xl font-black italic text-blue-500 uppercase">Bag HQ</h1>
         <div class="flex gap-4">
-            <button onclick="toggleStore()" id="store-btn" class="px-8 py-3 rounded-2xl font-black text-xs uppercase">Syncing...</button>
+            <button onclick="toggleStore()" id="store-btn" class="px-8 py-3 rounded-2xl font-black text-xs uppercase transition-all">Syncing...</button>
             <button onclick="toggleFlash()" id="flash-btn" class="bg-red-600 px-8 py-3 rounded-2xl font-black text-xs uppercase">Flash Sale</button>
         </div>
     </header>
@@ -24,10 +26,10 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div class="lg:col-span-2"><div id="order-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div></div>
         
-        <div class="card-bg p-6 h-fit shadow-2xl">
-            <h2 class="text-xs font-black uppercase text-slate-500 mb-6">Inventory</h2>
-            <div id="stock-list" class="space-y-2 mb-6"></div>
-            <button onclick="saveAllStock()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-black uppercase text-xs transition-all">
+        <div class="card-bg p-8 h-fit shadow-2xl sticky top-6">
+            <h2 class="text-xs font-black uppercase text-blue-400 mb-6 tracking-widest">Inventory Levels</h2>
+            <div id="stock-list" class="space-y-3 mb-8"></div>
+            <button onclick="saveAllStock()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-5 rounded-2xl font-black uppercase text-xs transition-all shadow-xl shadow-blue-900/40">
                 Update Stock Levels
             </button>
         </div>
@@ -40,7 +42,6 @@
         let localStock = {};
         const snacks = ["squid_l_red", "squid_l_orange", "squid_g", "squid_o", "squid_r", "doritos", "pocky", "oreo", "lays_s", "lays_n", "gummy", "gum"];
 
-        // Sync Store State
         db.ref('settings/storeOpen').on('value', snap => {
             const open = snap.val();
             const btn = document.getElementById('store-btn');
@@ -50,7 +51,6 @@
 
         function toggleStore() { db.ref('settings/storeOpen').once('value', snap => db.ref('settings/storeOpen').set(!snap.val())); }
 
-        // Sync Stock
         db.ref('stock').on('value', snap => { localStock = snap.val() || {}; renderStock(); });
 
         function renderStock() {
@@ -58,12 +58,13 @@
             container.innerHTML = "";
             snacks.forEach(id => {
                 const val = localStock[id] || 0;
-                container.innerHTML += `<div class="flex items-center justify-between bg-slate-800/40 p-3 rounded-xl border border-slate-700">
-                    <span class="text-[10px] font-black uppercase text-slate-400">${id.replace(/_/g, ' ')}</span>
+                container.innerHTML += `
+                <div class="flex items-center justify-between p-4 rounded-2xl stock-row transition-all">
+                    <span class="text-[10px] font-black uppercase text-slate-300">${id.replace(/_/g, ' ')}</span>
                     <div class="flex items-center gap-2">
-                        <button onclick="adj('${id}', -1)" class="w-8 h-8 bg-slate-700 rounded-lg">-</button>
-                        <input type="number" value="${val}" class="w-10 bg-transparent text-center font-bold text-blue-400 outline-none" onchange="localStock['${id}']=parseInt(this.value)">
-                        <button onclick="adj('${id}', 1)" class="w-8 h-8 bg-slate-700 rounded-lg">+</button>
+                        <button onclick="adj('${id}', -1)" class="w-9 h-9 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold border border-slate-700">-</button>
+                        <input type="number" value="${val}" class="w-12 bg-transparent text-center font-black text-blue-500 outline-none text-sm" onchange="localStock['${id}']=parseInt(this.value)">
+                        <button onclick="adj('${id}', 1)" class="w-9 h-9 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold border border-slate-700">+</button>
                     </div>
                 </div>`;
             });
@@ -71,7 +72,6 @@
         function adj(id, a) { localStock[id] = Math.max(0, (localStock[id] || 0) + a); renderStock(); }
         function saveAllStock() { db.ref('stock').set(localStock).then(() => alert("Inventory Updated! ✅")); }
 
-        // Sync Orders
         db.ref('orders').on('value', snap => {
             const list = document.getElementById('order-list'); list.innerHTML = "";
             const data = snap.val() || {};
@@ -79,7 +79,7 @@
                 const o = data[id]; if(o.status === 'completed' || o.status === 'cancelled') return;
                 list.innerHTML += `<div class="card-bg p-6 border-l-4 ${o.status === 'pending' ? 'border-yellow-500' : 'border-blue-500'}">
                     <div class="flex justify-between font-black uppercase text-sm mb-2"><span>${o.name}</span><span class="text-blue-500">${o.total}฿</span></div>
-                    <p class="text-slate-400 text-xs mb-6 font-medium">${o.items}</p>
+                    <p class="text-slate-400 text-xs mb-6 font-medium italic">${o.items}</p>
                     <div class="flex gap-2">
                         ${o.status === 'pending' ? `<button onclick="upd('${id}', 'active')" class="bg-blue-600 flex-1 py-3 rounded-xl font-black text-[10px] uppercase">Accept</button><button onclick="upd('${id}', 'cancelled')" class="bg-red-600 text-white px-4 rounded-xl font-black text-[10px] uppercase">Decline</button>` : `<button onclick="upd('${id}', 'completed')" class="bg-green-600 flex-1 py-3 rounded-xl font-black text-[10px] uppercase">Complete</button>`}
                     </div>
