@@ -23,6 +23,7 @@
         .badge-fire { background: #fef3c7; color: #d97706; border: 1px solid #fcd34d; font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 800; text-transform: uppercase; display: inline-flex; align-items: center; gap: 4px; }
         .badge-low { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 800; text-transform: uppercase; }
         .category-btn.active { background: #3b82f6; color: white; }
+        .flash-active { color: #ef4444; text-decoration: line-through; font-size: 0.8em; margin-right: 4px; }
     </style>
 </head>
 <body class="pb-64 overflow-x-hidden">
@@ -34,7 +35,6 @@
         <div class="flex-1 overflow-y-auto">
             <h2 class="text-3xl font-black text-blue-600 italic uppercase mb-6">The Story.</h2>
             <p class="text-slate-600 leading-relaxed mb-8 font-medium text-sm">Founded by Alon and Sean to bridge the gap between hunger and class.</p>
-            
             <div class="space-y-4 mb-10">
                 <div class="bg-cyan-50 p-4 rounded-2xl border border-cyan-100">
                     <p class="text-[10px] font-black text-cyan-600 uppercase tracking-widest">Founder</p>
@@ -45,13 +45,11 @@
                     <p class="text-lg font-bold">Sean Raynes</p>
                 </div>
             </div>
-
             <div class="bg-gradient-to-br from-yellow-400 to-orange-500 p-6 rounded-[2rem] text-white shadow-lg mb-8">
                 <p class="text-[10px] font-black uppercase tracking-widest mb-1">Coming Soon</p>
                 <h4 class="text-xl font-black italic uppercase leading-tight">Promo Codes & Rewards</h4>
                 <p class="text-xs font-medium mt-2 opacity-90">Unlock exclusive discounts. Stay hungry.</p>
             </div>
-
             <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Contact Support</h3>
             <div class="space-y-2 text-xs font-bold text-slate-600">
                 <p>📧 200050@ucis.ac.th</p>
@@ -59,6 +57,10 @@
             </div>
         </div>
         <div class="pt-6 text-[10px] text-slate-300 font-bold uppercase tracking-widest">UCIS Premium Fuel © 2026</div>
+    </div>
+
+    <div id="flash-huge-text" class="hidden fixed right-[-50px] top-1/2 -translate-y-1/2 rotate-90 z-0 opacity-10 pointer-events-none select-none">
+        <h1 class="text-[120px] font-black uppercase italic text-red-600 whitespace-nowrap">FLASH SALE LIVE</h1>
     </div>
 
     <nav id="main-nav" class="bg-card backdrop-blur-md p-4 border-b sticky top-0 z-50 flex items-center px-6">
@@ -70,13 +72,24 @@
         </div>
     </nav>
 
-    <main class="max-w-2xl mx-auto p-6">
+    <main class="max-w-2xl mx-auto p-6 relative z-10">
         <div id="order-flow">
+            <div id="flash-banner" class="hidden bg-red-600 text-white p-6 rounded-[2rem] mb-6 flex justify-between items-center shadow-xl animate-bounce">
+                <div>
+                    <p class="text-[10px] font-black uppercase tracking-widest opacity-80">Limited Time Only</p>
+                    <h2 class="text-2xl font-black italic uppercase">10% OFF EVERYTHING!</h2>
+                </div>
+                <div class="text-right">
+                    <p class="text-[10px] font-black uppercase">Ends In</p>
+                    <p id="flash-timer" class="text-2xl font-black font-mono">00:00</p>
+                </div>
+            </div>
+
             <div id="rush-hour-banner" class="hidden bg-orange-100 border border-orange-200 p-4 rounded-3xl mb-6 flex items-center gap-4 text-orange-700">
                 <span class="text-2xl">⚡</span>
                 <div>
                     <p class="font-black text-xs uppercase tracking-widest">Rush Hour Active</p>
-                    <p class="text-[10px] font-bold opacity-80">High order volume. Deliveries may take 5-10 mins longer.</p>
+                    <p class="text-[10px] font-bold opacity-80">High volume. Wait times adjusted.</p>
                 </div>
             </div>
 
@@ -89,11 +102,11 @@
                 <section class="bg-card p-8 rounded-[2.5rem] shadow-sm border">
                     <h2 class="font-bold text-slate-400 mb-4 uppercase text-[10px] tracking-widest">1. Identity</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input type="text" id="cust-name" placeholder="Full Name" class="bg-slate-500/10 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all">
-                        <input type="text" id="cust-grade" placeholder="Grade (e.g. 10B)" class="bg-slate-500/10 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                        <input type="text" id="cust-name" placeholder="Full Name" class="bg-slate-500/10 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500">
+                        <input type="text" id="cust-grade" placeholder="Grade (e.g. 10B)" class="bg-slate-500/10 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div class="flex gap-2 p-1 bg-slate-500/10 rounded-2xl mt-4">
-                        <button onclick="setMethod('Pickup')" id="btn-pickup" class="flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white shadow-sm transition-all">Pickup</button>
+                        <button onclick="setMethod('Pickup')" id="btn-pickup" class="flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white transition-all">Pickup</button>
                         <button onclick="setMethod('Delivery')" id="btn-delivery" class="flex-1 py-3 rounded-xl font-bold text-sm text-slate-400 transition-all">Delivery (+15฿)</button>
                     </div>
                     <div id="loc-container" class="mt-4 hidden"><input type="text" id="cust-loc" placeholder="Room / Area" class="w-full bg-slate-500/10 border border-blue-500/20 p-4 rounded-2xl outline-none text-sm"></div>
@@ -116,12 +129,12 @@
 
         <div id="receipt-page" class="hidden">
             <div id="receipt-card" class="bg-card rounded-[3rem] shadow-2xl overflow-hidden border-4 border-blue-600">
-                <div id="receipt-header" class="blue-gradient p-10 text-white text-center transition-colors duration-500">
+                <div id="receipt-header" class="blue-gradient p-10 text-white text-center">
                     <div id="receipt-icon" class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">✓</div>
-                    <h2 id="receipt-status-text" class="text-3xl font-black uppercase italic tracking-tighter">Bag Secured!</h2>
+                    <h2 class="text-3xl font-black uppercase italic tracking-tighter">Bag Secured!</h2>
                     <p class="text-blue-100 text-[10px] font-bold uppercase tracking-widest mt-1 opacity-80" id="receipt-id"></p>
                 </div>
-                <div class="p-8 space-y-6" id="receipt-details">
+                <div class="p-8 space-y-6">
                     <div class="flex justify-between items-end border-b pb-6">
                         <div><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Wait Time</p><p class="text-4xl font-black text-blue-600" id="est-time">--</p></div>
                         <div class="text-right"><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">To Pay</p><p class="text-4xl font-black" id="receipt-total">0฿</p></div>
@@ -148,13 +161,13 @@
 
     <div id="rules-modal" class="fixed inset-0 bg-slate-900/60 hidden z-[400] flex items-center justify-center p-6 backdrop-blur-sm">
         <div class="bg-white p-10 rounded-[3rem] max-w-sm w-full shadow-2xl text-center border-b-8 border-blue-600 text-slate-900 relative">
-            <button onclick="document.getElementById('rules-modal').classList.add('hidden')" class="absolute top-6 right-8 text-slate-300 font-black hover:text-slate-500 transition-colors">✕ Back</button>
+            <button onclick="document.getElementById('rules-modal').classList.add('hidden')" class="absolute top-6 right-8 text-slate-300 font-black hover:text-slate-500">✕ Back</button>
             <h2 class="text-2xl font-black mb-6 mt-4 uppercase italic text-blue-600">The Rules</h2>
             <ul class="text-slate-500 mb-8 text-sm space-y-4 text-left font-medium italic leading-snug">
-                <li>• Please ensure your cash is ready for immediate collection upon arrival.</li>
-                <li>• No bag pickups or deliveries are permitted while lessons are in session.</li>
+                <li>• Please ensure your cash is ready for immediate collection.</li>
+                <li>• No bag deliveries are permitted while lessons are in session.</li>
             </ul>
-            <button id="final-buy-btn" onclick="submitOrder()" class="w-full blue-gradient text-white py-5 rounded-2xl font-black uppercase tracking-widest active:scale-95 transition-all">Accept & Buy</button>
+            <button id="final-buy-btn" onclick="submitOrder()" class="w-full blue-gradient text-white py-5 rounded-2xl font-black uppercase tracking-widest">Accept & Buy</button>
         </div>
     </div>
 
@@ -177,7 +190,30 @@
             gum: { name: "Chewing Gum", price: 30, cat: "Sweet" }
         };
 
-        let cart = {}, stock = {}, salesStats = {}, method = "Pickup", deliveryFee = 0, currentCat = "All";
+        let cart = {}, stock = {}, salesStats = {}, method = "Pickup", deliveryFee = 0, currentCat = "All", isFlash = false;
+
+        // FLASH SALE LISTENERS
+        db.ref('settings/flashSale').on('value', snap => {
+            const data = snap.val() || { active: false, end: 0 };
+            isFlash = data.active && data.end > Date.now();
+            document.getElementById('flash-banner').classList.toggle('hidden', !isFlash);
+            document.getElementById('flash-huge-text').classList.toggle('hidden', !isFlash);
+            renderInventory();
+            updateCartDisplay();
+        });
+
+        setInterval(() => {
+            db.ref('settings/flashSale/end').once('value', snap => {
+                const end = snap.val() || 0;
+                const remaining = end - Date.now();
+                if(remaining > 0) {
+                    const m = Math.floor(remaining/60000); const s = Math.floor((remaining%60000)/1000);
+                    document.getElementById('flash-timer').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
+                } else if(isFlash) {
+                    db.ref('settings/flashSale/active').set(false);
+                }
+            });
+        }, 1000);
 
         function filterCat(c) {
             currentCat = c;
@@ -206,8 +242,8 @@
 
         function setMethod(m) {
             method = m; deliveryFee = (m === "Delivery") ? 15 : 0;
-            document.getElementById('btn-pickup').className = m === "Pickup" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white shadow-sm transition-all" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-400 transition-all";
-            document.getElementById('btn-delivery').className = m === "Delivery" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white shadow-sm transition-all" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-400 transition-all";
+            document.getElementById('btn-pickup').className = m === "Pickup" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white transition-all" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-400 transition-all";
+            document.getElementById('btn-delivery').className = m === "Delivery" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white transition-all" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-400 transition-all";
             document.getElementById('loc-container').classList.toggle('hidden', m !== 'Delivery');
             updateCartDisplay();
         }
@@ -231,6 +267,7 @@
                 if(currentCat !== "All" && item.cat !== currentCat) return;
                 if(search && !item.name.toLowerCase().includes(search)) return;
 
+                const price = isFlash ? Math.floor(item.price * 0.9) : item.price;
                 let badgesHTML = "";
                 if(topSellerId === id && maxSold > 0) badgesHTML += `<span class="badge-fire">🔥 Top Pick</span>`;
                 if(s > 0 && s <= 2) badgesHTML += `<span class="badge-low ml-2">⚠️ Only ${s} Left</span>`;
@@ -241,7 +278,10 @@
                         <div class="mb-1">${badgesHTML}</div>
                         <h3 class="font-bold text-lg">${item.name}</h3>
                         <div class="flex items-center gap-2">
-                           <p class="text-blue-600 font-black">${item.price} THB</p>
+                           <p class="text-blue-600 font-black">
+                                ${isFlash ? `<span class="flash-active">${item.price}฿</span>` : ''}
+                                ${price} THB
+                           </p>
                            <span class="text-[10px] font-bold text-slate-400 uppercase bg-slate-500/10 px-2 py-0.5 rounded-md">Stock: ${s}</span>
                         </div>
                     </div>
@@ -262,15 +302,17 @@
 
         function updateCartDisplay() {
             let total = deliveryFee;
-            for (let id in cart) total += (cart[id] * itemsData[id].price);
+            for (let id in cart) {
+                const price = isFlash ? Math.floor(itemsData[id].price * 0.9) : itemsData[id].price;
+                total += (cart[id] * price);
+            }
             document.getElementById('total-display').innerText = total + " THB";
             return total;
         }
 
         function showRules() {
             if(!document.getElementById('cust-name').value) return alert("Enter Name First");
-            const itemsInCart = Object.values(cart).some(q => q > 0);
-            if(!itemsInCart) return alert("Your bag is empty!");
+            if(!Object.values(cart).some(q => q > 0)) return alert("Empty Bag!");
             document.getElementById('rules-modal').classList.remove('hidden');
         }
 
@@ -279,7 +321,16 @@
             for(let id in cart) { if(cart[id] > 0) { itemsArr.push(`${itemsData[id].name} x${cart[id]}`); cartMap[id] = cart[id]; } }
             
             const finalTotal = updateCartDisplay();
-            const orderData = { name: document.getElementById('cust-name').value, grade: document.getElementById('cust-grade').value, loc: (method === 'Pickup' ? "Falcons Nest" : document.getElementById('cust-loc').value), items: itemsArr.join(', '), rawItems: cartMap, total: finalTotal, status: 'active', timestamp: Date.now() };
+            const orderData = { 
+                name: document.getElementById('cust-name').value, 
+                grade: document.getElementById('cust-grade').value, 
+                loc: (method === 'Pickup' ? "Falcons Nest" : document.getElementById('cust-loc').value), 
+                items: itemsArr.join(', '), 
+                rawItems: cartMap, 
+                total: finalTotal, 
+                status: 'active', 
+                timestamp: Date.now() 
+            };
 
             const freshSnap = await db.ref('stock').once('value'); const fs = freshSnap.val();
             const salesSnap = await db.ref('sales_counts').once('value'); const ss = salesSnap.val() || {};
