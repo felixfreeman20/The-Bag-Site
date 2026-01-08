@@ -10,150 +10,94 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
-        :root { --bg: #e0f7fa; --card: #ffffff; --text: #0f172a; --border: #cffafe; --muted: #f1f5f9; }
-        .dark-mode { --bg: #020617; --card: #0f172a; --text: #f8fafc; --border: #1e293b; --muted: #1e293b; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text); transition: background 0.5s ease; text-align: left; overflow-x: hidden; }
+        :root { --bg: #e0f7fa; --card: #ffffff; --text: #0f172a; --border: #cffafe; }
+        .dark-mode { --bg: #020617; --card: #0f172a; --text: #f8fafc; --border: #1e293b; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text); transition: background 0.5s ease; }
         .bg-card { background-color: var(--card); border-color: var(--border); }
         .blue-gradient { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
         .hidden { display: none !important; }
         .sold-out { opacity: 0.4; filter: grayscale(1); pointer-events: none; order: 999 !important; } 
-        
         #about-sidebar { transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); transform: translateX(-100%); z-index: 1000; }
         #about-sidebar.open { transform: translateX(0); }
-        
         .snack-img { width: 100px; height: 120px; object-fit: cover; border-radius: 1.5rem; background: #f1f5f9; }
         .dark-mode .snack-img { background: #1e293b; }
-
-        #inventory-container { max-height: 650px; overflow-y: auto; padding-right: 8px; display: flex; flex-direction: column; gap: 1.25rem; scrollbar-width: none; }
-        
-        @keyframes flash-border { 0% { border-color: #ef4444; } 50% { border-color: #fca5a5; } 100% { border-color: #ef4444; } }
-        .flash-active-card { animation: flash-border 1s infinite; border-width: 2px !important; }
-        .old-price { color: #94a3b8; text-decoration: line-through; font-size: 0.8em; margin-right: 4px; }
-        .badge-fire { background: #fef3c7; color: #d97706; border: 1px solid #fcd34d; font-size: 9px; padding: 2px 8px; border-radius: 99px; font-weight: 800; text-transform: uppercase; }
-        .category-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
-        
-        /* DARK MODE UI FIXES */
-        .method-btn { transition: all 0.2s; color: #94a3b8; }
+        #inventory-container { max-height: 650px; overflow-y: auto; display: flex; flex-direction: column; gap: 1.25rem; scrollbar-width: none; }
+        .method-btn { transition: all 0.2s; color: #94a3b8; font-weight: 900; }
         .method-btn.active { background: #3b82f6 !important; color: white !important; }
         .dark-mode .bg-slate-500\/10 { background-color: rgba(255,255,255,0.05); }
+        @keyframes pulse-blue { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .animate-pulse-blue { animation: pulse-blue 2s infinite; }
     </style>
 </head>
 <body class="pb-64">
 
+    <audio id="pop-sound" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3" preload="auto"></audio>
     <audio id="success-sound" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" preload="auto"></audio>
-    <audio id="btn-click-sound" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3" preload="auto"></audio>
     <audio id="error-sound" src="https://assets.mixkit.co/active_storage/sfx/2572/2572-preview.mp3" preload="auto"></audio>
-    <audio id="flash-start-sound" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3" preload="auto"></audio>
 
-    <div id="cancelled-screen" class="fixed inset-0 z-[999] hidden flex items-center justify-center p-6 bg-slate-900/90 backdrop-blur-md">
-        <div class="bg-white p-12 rounded-[3rem] max-w-sm w-full text-center shadow-2xl border-t-8 border-red-500">
-            <h2 class="text-3xl font-black text-red-600 uppercase italic">Order Declined</h2>
-            <p class="text-slate-500 font-bold mt-4 mb-8">The staff has cancelled your order.</p>
-            <button onclick="location.reload()" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-black uppercase">Try Again</button>
+    <div id="pending-screen" class="fixed inset-0 z-[800] hidden flex items-center justify-center p-6 bg-slate-900/80 backdrop-blur-md text-white">
+        <div class="text-center">
+            <div class="w-20 h-20 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+            <h2 class="text-3xl font-black italic uppercase animate-pulse-blue">Sending Bag...</h2>
+            <p class="text-slate-400 font-bold mt-2">Waiting for staff to accept</p>
         </div>
     </div>
 
     <div id="about-sidebar" class="fixed top-0 left-0 h-full w-80 bg-white shadow-2xl p-8 flex flex-col text-slate-900">
         <button onclick="toggleMenu()" class="text-slate-400 text-sm font-black uppercase mb-8 text-left">✕ Close</button>
-        <div class="flex-1 overflow-y-auto">
-            <h2 class="text-3xl font-black text-blue-600 italic uppercase mb-4">The Story.</h2>
-            <p class="text-slate-600 leading-relaxed mb-8 text-sm font-medium">Alon and Sean founded The Bag to bring premium snacks directly to your classroom.</p>
-            
-            <div class="bg-gradient-to-br from-yellow-400 to-orange-500 p-6 rounded-[2rem] text-white shadow-lg mb-8">
-                <p class="text-[10px] font-black uppercase mb-1 opacity-90">Rewards System</p>
-                <h4 class="text-xl font-black italic uppercase">Promo Codes</h4>
-                <p class="text-[10px] font-bold mt-2 bg-black/10 inline-block px-2 py-1 rounded-lg uppercase tracking-widest">Coming Soon</p>
-            </div>
-
-            <div class="space-y-4 mb-10">
-                <div class="bg-cyan-50 p-4 rounded-2xl border border-cyan-100"><p class="text-[10px] font-black text-cyan-600 uppercase tracking-widest">Founder</p><p class="text-lg font-bold">Alon Katz</p></div>
-                <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100"><p class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Co-Founder</p><p class="text-lg font-bold">Sean Raynes</p></div>
-            </div>
+        <h2 class="text-3xl font-black text-blue-600 italic uppercase mb-4">The Story.</h2>
+        <p class="text-slate-600 leading-relaxed mb-8 text-sm font-medium">Alon and Sean founded The Bag to bring snacks directly to you.</p>
+        <div class="bg-gradient-to-br from-yellow-400 to-orange-500 p-6 rounded-[2rem] text-white shadow-lg mb-8">
+            <h4 class="text-xl font-black italic uppercase">Promo Codes</h4>
+            <p class="text-[10px] font-bold mt-2 bg-black/10 inline-block px-2 py-1 rounded-lg uppercase">Coming Soon</p>
         </div>
     </div>
 
     <nav class="bg-card backdrop-blur-md p-4 border-b sticky top-0 z-50 flex items-center px-6">
-        <div class="w-1/3"><button onclick="toggleMenu()" class="p-2 flex flex-col gap-1.5"><div class="w-6 h-0.5 bg-blue-600"></div><div class="w-6 h-0.5 bg-blue-600"></div></button></div>
+        <div class="w-1/3"><button onclick="toggleMenu(); playPop()" class="p-2 flex flex-col gap-1.5"><div class="w-6 h-0.5 bg-blue-600"></div><div class="w-6 h-0.5 bg-blue-600"></div></button></div>
         <div class="w-1/3 text-center"><h1 class="text-xl font-black text-blue-600 italic uppercase">The Bag.</h1></div>
         <div class="w-1/3 text-right flex items-center justify-end gap-3">
-            <button onclick="toggleDarkMode()" class="p-2 bg-slate-500/10 rounded-xl" id="dark-toggle">🌙</button>
-            <img src="logo.png" class="h-8 w-8 object-contain">
+            <button onclick="toggleDarkMode(); playPop()" class="p-2 bg-slate-500/10 rounded-xl">🌙</button>
         </div>
     </nav>
 
-    <main class="max-w-2xl mx-auto p-6 relative z-10">
+    <main class="max-w-2xl mx-auto p-6 relative">
         <div id="order-flow">
-            <div id="flash-banner" class="hidden bg-red-600 text-white p-8 rounded-[2.5rem] mb-8 flex justify-between items-center shadow-xl border-4 border-white">
-                <div><h2 class="text-3xl font-black italic uppercase">10% OFF!</h2><p class="text-xs font-bold opacity-80 uppercase">Flash Sale Activated</p></div>
-                <div class="text-right bg-white/20 p-4 rounded-3xl"><p id="flash-timer" class="text-2xl font-black font-mono">00:00</p></div>
-            </div>
-
-            <div id="store-content" class="space-y-8">
-                <section class="bg-card p-8 rounded-[2.5rem] shadow-sm border">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input type="text" id="cust-name" placeholder="Name" class="bg-slate-500/10 p-5 rounded-2xl outline-none font-bold text-[var(--text)]">
-                        <input type="text" id="cust-grade" placeholder="Grade" class="bg-slate-500/10 p-5 rounded-2xl outline-none font-bold text-[var(--text)]">
-                    </div>
-                    <div class="flex gap-2 p-1.5 bg-slate-500/10 rounded-[1.5rem] mt-6">
-                        <button onclick="setMethod('Pickup')" id="btn-pickup" class="method-btn active flex-1 py-4 rounded-xl font-black text-xs uppercase bg-blue-600 text-white">Pickup</button>
-                        <button onclick="setMethod('Delivery')" id="btn-delivery" class="method-btn flex-1 py-4 rounded-xl font-black text-xs uppercase">Delivery (+15฿)</button>
-                    </div>
-                    <div id="loc-container" class="mt-4 hidden"><input type="text" id="cust-loc" placeholder="Location" class="w-full bg-slate-500/10 p-5 rounded-2xl outline-none text-sm font-bold text-[var(--text)]"></div>
-                </section>
-
-                <section class="space-y-6">
-                    <div class="flex flex-col gap-4">
-                        <input type="text" id="search-input" oninput="renderInventory()" placeholder="Search snacks..." class="bg-card p-5 rounded-[1.5rem] border outline-none font-medium text-[var(--text)]">
-                        <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                            <button onclick="filterCat('All')" class="category-btn active px-6 py-3 rounded-xl text-[10px] font-black border uppercase">All</button>
-                            <button onclick="filterCat('Spicy')" class="category-btn px-6 py-3 rounded-xl text-[10px] font-black border uppercase">Spicy</button>
-                            <button onclick="filterCat('Chips')" class="category-btn px-6 py-3 rounded-xl text-[10px] font-black border uppercase">Chips</button>
-                            <button onclick="filterCat('Sweet')" class="category-btn px-6 py-3 rounded-xl text-[10px] font-black border uppercase">Sweet</button>
-                        </div>
-                    </div>
-                    <div id="inventory-container" class="flex flex-col"></div>
-                </section>
-            </div>
+            <section class="bg-card p-8 rounded-[2.5rem] shadow-sm border mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="text" id="cust-name" placeholder="Name" class="bg-slate-500/10 p-5 rounded-2xl outline-none font-bold text-[var(--text)]">
+                    <input type="text" id="cust-grade" placeholder="Grade" class="bg-slate-500/10 p-5 rounded-2xl outline-none font-bold text-[var(--text)]">
+                </div>
+                <div class="flex gap-2 p-1.5 bg-slate-500/10 rounded-[1.5rem] mt-6">
+                    <button onclick="setMethod('Pickup'); playPop()" id="btn-pickup" class="method-btn active flex-1 py-4 rounded-xl text-xs uppercase">Pickup</button>
+                    <button onclick="setMethod('Delivery'); playPop()" id="btn-delivery" class="method-btn flex-1 py-4 rounded-xl text-xs uppercase">Delivery (+15฿)</button>
+                </div>
+            </section>
+            <div id="inventory-container"></div>
         </div>
 
         <div id="receipt-page" class="hidden">
-            <div class="bg-card rounded-[3.5rem] shadow-2xl overflow-hidden border-4 border-blue-600">
-                <div class="blue-gradient p-12 text-white text-center">
-                    <h2 class="text-4xl font-black uppercase italic">Bag Secured!</h2>
-                    <p id="receipt-id" class="text-[10px] font-black mt-2 opacity-70"></p>
-                </div>
-                <div class="p-10 space-y-8">
-                    <div class="flex justify-between items-end border-b pb-8">
-                        <div><p class="text-[10px] font-black text-slate-400 uppercase">Wait Time</p><p class="text-5xl font-black text-blue-600" id="est-time">--</p></div>
-                        <div class="text-right"><p class="text-[10px] font-black text-slate-400 uppercase">Total</p><p class="text-5xl font-black text-[var(--text)]" id="receipt-total">0฿</p></div>
-                    </div>
-                    <p class="font-bold text-lg text-[var(--text)]" id="receipt-items"></p>
-                    <div class="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-[2rem]"><p class="text-blue-600 font-black italic text-xl" id="receipt-location"></p></div>
-                    <button onclick="location.reload()" class="w-full text-blue-600 font-black uppercase text-xs">New Order</button>
-                </div>
+            <div class="bg-card rounded-[3.5rem] shadow-2xl overflow-hidden border-4 border-blue-600 text-center p-12">
+                <h2 class="text-4xl font-black uppercase italic text-blue-600">Bag Secured!</h2>
+                <p id="receipt-items" class="mt-6 font-bold text-[var(--text)]"></p>
+                <button onclick="location.reload(); playPop()" class="mt-8 text-blue-600 font-black uppercase text-xs">New Order</button>
             </div>
         </div>
     </main>
 
     <div id="bottom-bar" class="fixed bottom-0 left-0 right-0 bg-card/90 backdrop-blur-xl p-8 border-t z-50">
         <div class="max-w-2xl mx-auto flex justify-between items-center">
-            <div><p class="text-3xl font-black text-blue-600" id="total-display">0 THB</p></div>
-            <button onclick="showRules()" class="blue-gradient text-white px-12 py-5 rounded-[1.5rem] font-black uppercase text-xs shadow-xl">Secure Bag</button>
+            <p class="text-3xl font-black text-blue-600" id="total-display">0 THB</p>
+            <button onclick="showRules(); playPop()" class="blue-gradient text-white px-12 py-5 rounded-[1.5rem] font-black uppercase text-xs">Secure Bag</button>
         </div>
     </div>
 
-    <div id="rules-modal" class="fixed inset-0 bg-slate-900/70 hidden z-[500] flex items-center justify-center p-6 backdrop-blur-md">
-        <div class="bg-white p-12 rounded-[3.5rem] max-w-sm w-full text-center relative border-b-8 border-blue-600">
-            <h2 class="text-3xl font-black mb-6 italic text-blue-600">The Rules</h2>
-            <ul class="text-left space-y-4 mb-8 text-sm font-semibold text-slate-500 italic">
-                <li>• Cash must be ready for pickup.</li>
-                <li>• No deliveries during active lessons.</li>
-            </ul>
-            <div class="bg-orange-100 p-4 rounded-2xl mb-8 border border-orange-200">
-                <p class="text-orange-600 font-black uppercase text-[10px] tracking-widest">Promo Codes</p>
-                <p class="text-orange-800 font-bold text-xs mt-1">COMING SOON!</p>
-            </div>
-            <button onclick="submitOrder()" class="w-full blue-gradient text-white py-6 rounded-2xl font-black uppercase shadow-lg">Accept & Buy</button>
+    <div id="rules-modal" class="fixed inset-0 bg-slate-900/70 hidden z-[900] flex items-center justify-center p-6 backdrop-blur-md">
+        <div class="bg-white p-10 rounded-[3rem] max-w-sm w-full text-center">
+            <h2 class="text-2xl font-black mb-4 italic text-blue-600 uppercase">The Rules</h2>
+            <p class="text-slate-500 text-sm font-bold mb-8 italic">• Cash ready on arrival<br>• No delivery during class</p>
+            <div class="bg-orange-100 p-4 rounded-2xl mb-8"><p class="text-orange-600 font-black uppercase text-[10px]">Promo Codes: Coming Soon</p></div>
+            <button onclick="submitOrder(); playPop()" class="w-full blue-gradient text-white py-5 rounded-2xl font-black uppercase">Accept & Buy</button>
         </div>
     </div>
 
@@ -177,76 +121,37 @@
             gum: { name: "Chewing Gum", price: 30, cat: "Sweet", img: "gum.png" }
         };
 
-        let cart = {}, stock = {}, method = "Pickup", deliveryFee = 0, currentCat = "All", isFlash = false;
+        let cart = {}, stock = {}, method = "Pickup", deliveryFee = 0;
 
-        function playClick() { document.getElementById('btn-click-sound').play().catch(()=>{}); }
-        function playError() { document.getElementById('error-sound').play().catch(()=>{}); }
-        function playSuccess() { document.getElementById('success-sound').play().catch(()=>{}); }
-
-        db.ref('settings/flashSale').on('value', snap => {
-            const data = snap.val() || { active: false, end: 0 };
-            isFlash = data.active && data.end > Date.now();
-            if (isFlash) document.getElementById('flash-start-sound').play().catch(()=>{});
-            document.getElementById('flash-banner').classList.toggle('hidden', !isFlash);
-            renderInventory(); updateCartDisplay();
-        });
-
-        setInterval(() => {
-            if(!isFlash) return;
-            db.ref('settings/flashSale/end').once('value', snap => {
-                const rem = snap.val() - Date.now();
-                if(rem > 0) {
-                    const m = Math.floor(rem/60000); const s = Math.floor((rem%60000)/1000);
-                    document.getElementById('flash-timer').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
-                }
-            });
-        }, 1000);
-
-        function toggleMenu() { playClick(); document.getElementById('about-sidebar').classList.toggle('open'); }
-        function toggleDarkMode() { playClick(); document.body.classList.toggle('dark-mode'); }
-        function filterCat(c) { playClick(); currentCat = c; renderInventory(); }
-
-        function watchOrder(id) {
-            db.ref('orders/' + id).on('value', snap => {
-                if (snap.val() && snap.val().status === 'cancelled') {
-                    document.getElementById('receipt-page').classList.add('hidden');
-                    document.getElementById('cancelled-screen').classList.remove('hidden');
-                    playError();
-                }
-            });
+        function playPop() { document.getElementById('pop-sound').play().catch(()=>{}); }
+        function toggleMenu() { document.getElementById('about-sidebar').classList.toggle('open'); }
+        function toggleDarkMode() { document.body.classList.toggle('dark-mode'); }
+        function setMethod(m) { 
+            method = m; deliveryFee = (m === "Delivery" ? 15 : 0);
+            document.querySelectorAll('.method-btn').forEach(b => b.classList.remove('active', 'bg-blue-600', 'text-white'));
+            document.getElementById(m === 'Pickup' ? 'btn-pickup' : 'btn-delivery').classList.add('active');
+            updateCartDisplay();
         }
+        function showRules() { document.getElementById('rules-modal').classList.remove('hidden'); }
 
         db.ref('stock').on('value', snap => { stock = snap.val() || {}; renderInventory(); });
 
         function renderInventory() {
             const container = document.getElementById('inventory-container');
-            const search = document.getElementById('search-input').value.toLowerCase();
             container.innerHTML = "";
-            
-            const sortedIds = Object.keys(itemsData).sort((a, b) => (stock[b]||0) - (stock[a]||0));
-
-            sortedIds.forEach(id => {
+            Object.keys(itemsData).sort((a,b) => (stock[b]||0) - (stock[a]||0)).forEach(id => {
                 const item = itemsData[id]; const s = stock[id] || 0;
-                if(currentCat !== "All" && item.cat !== currentCat) return;
-                if(search && !item.name.toLowerCase().includes(search)) return;
-                const price = isFlash ? Math.floor(item.price * 0.9) : item.price;
-                
                 container.innerHTML += `
-                <div class="bg-card p-4 rounded-[2rem] flex gap-4 border ${s <= 0 ? 'sold-out' : ''} ${isFlash ? 'flash-active-card' : ''}">
+                <div class="bg-card p-4 rounded-[2rem] flex gap-4 border ${s <= 0 ? 'sold-out' : ''}">
                     <img src="${item.img}" class="snack-img">
                     <div class="flex-1 flex flex-col justify-between">
-                        <div>
-                            <div class="flex justify-between items-start">
-                                <h3 class="font-black text-sm text-[var(--text)]">${item.name}</h3>
-                            </div>
-                            <p class="text-blue-600 font-black mt-1">${isFlash ? `<span class="old-price">${item.price}฿</span>` : ''}${price}฿</p>
-                        </div>
+                        <h3 class="font-black text-sm text-[var(--text)]">${item.name}</h3>
                         <div class="flex items-center justify-between">
-                            <span class="text-[9px] font-bold text-slate-400 uppercase">Stock: ${s}</span>
+                            <span class="text-blue-600 font-black">${item.price}฿</span>
                             <div class="flex items-center gap-3 bg-slate-500/10 p-1 rounded-xl">
-                                <button onclick="updateQty('${id}', -1)" class="w-8 h-8 font-black text-[var(--text)]">-</button>
+                                <button onclick="updateQty('${id}', -1); playPop()" class="w-8 h-8 font-black text-[var(--text)]">-</button>
                                 <span class="font-black text-blue-600">${cart[id] || 0}</span>
-                                <button onclick="updateQty('${id}', 1)" class="w-8 h-8 font-black text-[var(--text)]" ${s <= (cart[id]||0) ? 'disabled' : ''}>+</button>
+                                <button onclick="updateQty('${id}', 1); playPop()" class="w-8 h-8 font-black text-[var(--text)]" ${s <= (cart[id]||0) ? 'disabled' : ''}>+</button>
                             </div>
                         </div>
                     </div>
@@ -254,49 +159,46 @@
             });
         }
 
-        function updateQty(id, amt) { playClick(); cart[id] = Math.max(0, Math.min(stock[id], (cart[id] || 0) + amt)); updateCartDisplay(); renderInventory(); }
-        
+        function updateQty(id, amt) { cart[id] = Math.max(0, Math.min(stock[id], (cart[id] || 0) + amt)); updateCartDisplay(); renderInventory(); }
         function updateCartDisplay() {
             let total = deliveryFee;
-            for (let id in cart) total += (cart[id] * (isFlash ? Math.floor(itemsData[id].price * 0.9) : itemsData[id].price));
+            for (let id in cart) total += (cart[id] * itemsData[id].price);
             document.getElementById('total-display').innerText = total + " THB";
             return total;
         }
 
-        function setMethod(m) { 
-            playClick(); 
-            method = m; 
-            deliveryFee = (m === "Delivery" ? 15 : 0); 
-            document.getElementById('loc-container').classList.toggle('hidden', m !== 'Delivery');
-            document.querySelectorAll('.method-btn').forEach(b => b.classList.remove('active', 'bg-blue-600', 'text-white'));
-            const activeBtn = document.getElementById(m === 'Pickup' ? 'btn-pickup' : 'btn-delivery');
-            activeBtn.classList.add('active');
-            updateCartDisplay(); 
-        }
-
-        function showRules() { playClick(); document.getElementById('rules-modal').classList.remove('hidden'); }
-
         async function submitOrder() {
-            const itemsArr = []; const cartMap = {};
-            for(let id in cart) if(cart[id] > 0) { itemsArr.push(`${itemsData[id].name} x${cart[id]}`); cartMap[id] = cart[id]; }
-            if(!document.getElementById('cust-name').value || itemsArr.length === 0) { playError(); return alert("Missing Info!"); }
+            const itemsArr = [];
+            for(let id in cart) if(cart[id] > 0) itemsArr.push(`${itemsData[id].name} x${cart[id]}`);
+            if(!document.getElementById('cust-name').value || itemsArr.length === 0) return alert("Missing Info!");
 
-            const finalTotal = updateCartDisplay();
-            const orderData = { name: document.getElementById('cust-name').value, grade: document.getElementById('cust-grade').value, loc: (method === 'Pickup' ? "Falcons Nest" : document.getElementById('cust-loc').value), items: itemsArr.join(', '), rawItems: cartMap, total: finalTotal, status: 'active', timestamp: Date.now() };
+            const orderData = { 
+                name: document.getElementById('cust-name').value, 
+                grade: document.getElementById('cust-grade').value, 
+                loc: (method === 'Pickup' ? "Falcons Nest" : "Delivery"), 
+                items: itemsArr.join(', '), 
+                status: 'pending', 
+                timestamp: Date.now() 
+            };
             
             const newRef = await db.ref('orders').push(orderData);
-            watchOrder(newRef.key); playSuccess(); confetti();
-            document.getElementById('order-flow').classList.add('hidden');
-            document.getElementById('bottom-bar').classList.add('hidden');
             document.getElementById('rules-modal').classList.add('hidden');
-            document.getElementById('receipt-page').classList.remove('hidden');
-            document.getElementById('receipt-id').innerText = "#" + newRef.key.slice(-6).toUpperCase();
-            document.getElementById('receipt-total').innerText = finalTotal + "฿";
-            document.getElementById('receipt-items').innerText = itemsArr.join(', ');
-            document.getElementById('receipt-location').innerText = orderData.loc;
-            db.ref('orders').orderByChild('status').equalTo('active').once('value', s => {
-                const c = s.exists() ? Object.keys(s.val()).length : 1;
-                document.getElementById('est-time').innerText = `${5+(c*2)}-${10+(c*2)}m`;
+            document.getElementById('pending-screen').classList.remove('hidden');
+
+            // Wait for staff to accept
+            db.ref('orders/' + newRef.key).on('value', snap => {
+                const order = snap.val();
+                if (order.status === 'active') {
+                    document.getElementById('pending-screen').classList.add('hidden');
+                    document.getElementById('order-flow').classList.add('hidden');
+                    document.getElementById('bottom-bar').classList.add('hidden');
+                    document.getElementById('receipt-page').classList.remove('hidden');
+                    document.getElementById('receipt-items').innerText = order.items;
+                    document.getElementById('success-sound').play();
+                    confetti();
+                } else if (order.status === 'cancelled') {
+                    location.reload();
+                }
             });
         }
     </script>
