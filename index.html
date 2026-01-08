@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
         :root { --bg: #e0f7fa; --card: #ffffff; --text: #0f172a; --border: #cffafe; }
@@ -19,9 +20,15 @@
         #about-sidebar { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); transform: translateX(-100%); }
         #about-sidebar.open { transform: translateX(0); }
         #inventory-container { max-height: 480px; overflow-y: auto; padding-right: 8px; scrollbar-width: thin; display: flex; flex-direction: column; gap: 1rem; }
+        
+        /* Badges */
+        .badge-fire { background: #fef3c7; color: #d97706; border: 1px solid #fcd34d; font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 800; text-transform: uppercase; display: inline-flex; align-items: center; gap: 4px; }
+        .badge-low { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 800; text-transform: uppercase; }
     </style>
 </head>
 <body class="pb-64 overflow-x-hidden">
+
+    <audio id="success-sound" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" preload="auto"></audio>
 
     <div id="about-sidebar" class="fixed top-0 left-0 h-full w-80 bg-white z-[600] shadow-2xl p-8 flex flex-col text-slate-900">
         <button onclick="toggleMenu()" class="text-slate-400 text-sm font-black uppercase tracking-widest mb-10 text-left">✕ Close</button>
@@ -140,115 +147,19 @@
         const db = firebase.database();
 
         const itemsData = {
-            squid_l: { name: "Spicy Squid (L)", price: 35 }, doritos: { name: "Cheese Doritos", price: 30 },
-            squid_g: { name: "Small Squid (Green)", price: 15 }, squid_o: { name: "Small Squid (Orange)", price: 15 },
-            squid_r: { name: "Small Squid (Red)", price: 15 }, pocky: { name: "Pocky Choco", price: 35 },
-            oreo: { name: "Oreo Pack", price: 15 }, lays_s: { name: "Lays Seaweed", price: 15 },
-            lays_n: { name: "Lays Normal", price: 15 }, gummy: { name: "Gummy Bears", price: 30 }, gum: { name: "Chewing Gum", price: 30 }
+            squid_l: { name: "Spicy Squid (L)", price: 35 }, 
+            doritos: { name: "Cheese Doritos", price: 30 },
+            squid_g: { name: "Small Squid (Green)", price: 15 }, 
+            squid_o: { name: "Small Squid (Orange)", price: 15 },
+            squid_r: { name: "Small Squid (Red)", price: 15 }, 
+            pocky: { name: "Pocky Choco", price: 35 },
+            oreo: { name: "Oreo Pack", price: 15 }, 
+            lays_s: { name: "Lays Seaweed", price: 15 },
+            lays_n: { name: "Lays Normal", price: 15 }, 
+            gummy: { name: "Gummy Bears", price: 30 }, 
+            gum: { name: "Chewing Gum", price: 30 }
         };
 
-        let cart = {}, stock = {}, method = "Pickup", deliveryFee = 0;
+        let cart = {}, stock = {}, salesStats = {}, method = "Pickup", deliveryFee = 0;
 
-        function toggleMenu() { document.getElementById('about-sidebar').classList.toggle('open'); }
-        function toggleDarkMode() {
-            document.body.classList.toggle('dark-mode');
-            document.getElementById('dark-toggle').innerText = document.body.classList.contains('dark-mode') ? "☀️" : "🌙";
-        }
-
-        db.ref('settings/isOpen').on('value', snap => {
-            const open = snap.val();
-            document.getElementById('store-content').classList.toggle('hidden', !open);
-            document.getElementById('bottom-bar').classList.toggle('hidden', !open);
-            document.getElementById('closed-message').classList.toggle('hidden', open);
-        });
-
-        function setMethod(m) {
-            method = m; deliveryFee = (m === "Delivery") ? 15 : 0;
-            document.getElementById('btn-pickup').className = m === "Pickup" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white shadow-sm transition-all" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-400 transition-all";
-            document.getElementById('btn-delivery').className = m === "Delivery" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white shadow-sm transition-all" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-400 transition-all";
-            document.getElementById('loc-container').classList.toggle('hidden', m !== 'Delivery');
-            updateCartDisplay();
-        }
-
-        db.ref('stock').on('value', snap => { stock = snap.val() || {}; renderInventory(); });
-
-        function renderInventory() {
-            const container = document.getElementById('inventory-container');
-            container.innerHTML = "";
-            const sortedIds = Object.keys(itemsData).sort((a,b) => (stock[b]||0) - (stock[a]||0));
-            sortedIds.forEach(id => {
-                const s = stock[id] || 0;
-                container.innerHTML += `<div class="snack-card bg-card p-6 rounded-[2rem] shadow-sm flex justify-between items-center border ${s <= 0 ? 'sold-out' : ''}"><div><h3 class="font-bold text-lg">${itemsData[id].name}</h3><p class="text-blue-600 font-black">${itemsData[id].price} THB</p></div><div class="flex items-center gap-4 bg-slate-500/10 p-1.5 rounded-2xl"><button onclick="updateQty('${id}', -1)" class="w-10 h-10 bg-card rounded-xl shadow-sm font-bold border border-blue-500/10">-</button><span id="${id}-qty" class="text-lg font-black w-6 text-center text-blue-600">${cart[id] || 0}</span><button onclick="updateQty('${id}', 1)" class="w-10 h-10 bg-card rounded-xl shadow-sm font-bold border border-blue-500/10" ${s <= (cart[id]||0) ? 'disabled' : ''}>+</button></div></div>`;
-            });
-        }
-
-        function updateQty(id, amt) {
-            cart[id] = Math.max(0, Math.min(stock[id], (cart[id] || 0) + amt));
-            document.getElementById(id + '-qty').innerText = cart[id];
-            updateCartDisplay();
-        }
-
-        function updateCartDisplay() {
-            let total = deliveryFee;
-            for (let id in cart) total += (cart[id] * itemsData[id].price);
-            document.getElementById('total-display').innerText = total + " THB";
-            return total;
-        }
-
-        function showRules() {
-            if(!document.getElementById('cust-name').value) return alert("Enter Name First");
-            document.getElementById('rules-modal').classList.remove('hidden');
-        }
-
-        async function submitOrder() {
-            const itemsArr = []; const cartMap = {};
-            for(let id in cart) { if(cart[id] > 0) { itemsArr.push(`${itemsData[id].name} x${cart[id]}`); cartMap[id] = cart[id]; } }
-            if(itemsArr.length === 0) return alert("Empty Cart!");
-            
-            const finalTotal = updateCartDisplay();
-            const orderData = { 
-                name: document.getElementById('cust-name').value, 
-                grade: document.getElementById('cust-grade').value, 
-                loc: (method === 'Pickup' ? "Falcons Nest" : document.getElementById('cust-loc').value), 
-                items: itemsArr.join(', '), 
-                rawItems: cartMap,
-                total: finalTotal, 
-                status: 'active',
-                timestamp: Date.now() 
-            };
-
-            const freshSnap = await db.ref('stock').once('value'); const fs = freshSnap.val();
-            let updates = {}; for(let id in cartMap) updates[`/stock/${id}`] = fs[id] - cartMap[id];
-            
-            const newRef = await db.ref('orders').push(orderData); await db.ref().update(updates);
-            
-            db.ref('orders/' + newRef.key).on('value', snap => {
-                if(snap.val() && snap.val().status === 'cancelled') showCancelledScreen();
-            });
-
-            // HIDE ALL ORDERING UI
-            document.getElementById('order-flow').classList.add('hidden');
-            document.getElementById('bottom-bar').classList.add('hidden');
-            document.getElementById('rules-modal').classList.add('hidden');
-
-            document.getElementById('receipt-page').classList.add('active-receipt');
-            document.getElementById('receipt-id').innerText = "ID: #" + newRef.key.slice(-4).toUpperCase();
-            document.getElementById('receipt-total').innerText = finalTotal + "฿";
-            document.getElementById('receipt-items').innerText = itemsArr.join(', ');
-            document.getElementById('receipt-location').innerText = orderData.loc;
-            document.getElementById('est-time').innerText = "5-10 mins";
-            document.getElementById('receipt-page').classList.remove('hidden');
-            window.scrollTo(0,0);
-        }
-
-        function showCancelledScreen() {
-            document.getElementById('receipt-header').className = "bg-red-600 p-10 text-white text-center";
-            document.getElementById('receipt-icon').innerHTML = "✕";
-            document.getElementById('receipt-status-text').innerText = "Bag Cancelled";
-            document.getElementById('receipt-details').classList.add('hidden');
-            document.getElementById('cancelled-content').classList.remove('hidden');
-            document.getElementById('receipt-card').classList.replace('border-blue-600', 'border-red-600');
-        }
-    </script>
-</body>
-</html>
+        function toggleMenu() { document.getElementById('about-sidebar').
