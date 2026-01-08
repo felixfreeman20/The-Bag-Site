@@ -27,9 +27,17 @@
         .snack-img { width: 90px; height: 110px; object-fit: cover; border-radius: 1.5rem; background: #f1f5f9; }
         .pop-btn { transition: transform 0.1s; }
         .pop-btn:active { transform: scale(0.95); }
+        
+        /* SHOP CLOSED OVERLAY */
+        #closed-screen { z-index: 9999; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
     </style>
 </head>
 <body class="pb-64">
+    <div id="closed-screen" class="fixed inset-0 bg-slate-900/80 hidden flex flex-col items-center justify-center text-center p-10">
+        <h1 class="text-white text-6xl font-black italic uppercase italic">Shop Closed</h1>
+        <p class="text-slate-400 font-bold mt-4 uppercase tracking-widest">We are currently restockin' or takin' a break.</p>
+    </div>
+
     <div id="full-cancel-screen" class="fixed inset-0 bg-red-600 hidden flex flex-col items-center justify-center text-center z-[5000] p-10">
         <h1 class="text-white text-7xl font-black italic uppercase">Canceled</h1>
         <button onclick="location.reload()" class="mt-10 bg-white text-red-600 px-12 py-5 rounded-2xl font-black">BACK TO STORE</button>
@@ -94,7 +102,10 @@
         <div class="max-w-xl mx-auto flex justify-between items-center">
             <div class="p-4 rounded-2xl">
                 <p class="text-[9px] font-black uppercase opacity-60">Total Amount</p>
-                <p class="text-2xl font-black" id="total-val" style="color:var(--accent)">0 THB</p>
+                <div class="flex items-center gap-2">
+                   <p class="text-2xl font-black" id="total-val" style="color:var(--accent)">0 THB</p>
+                   <span id="total-sale-tag" class="hidden text-[10px] bg-red-600 text-white px-2 py-1 rounded-lg font-black animate-pulse">-10%</span>
+                </div>
             </div>
             <button onclick="submitOrder(); playPop()" class="px-10 py-5 rounded-2xl font-black uppercase text-xs shadow-lg text-white pop-btn" style="background:var(--accent)">Secure Bag</button>
         </div>
@@ -107,6 +118,12 @@
         firebase.initializeApp(firebaseConfig); const db = firebase.database();
         
         let cart = {}, stock = {}, isFlash = false, method = "Pickup", bestSellerId = "";
+
+        // LISTEN FOR SHOP STATUS
+        db.ref('settings/storeOpen').on('value', snap => {
+            const isOpen = snap.val();
+            document.getElementById('closed-screen').classList.toggle('hidden', isOpen);
+        });
         
         const itemsData = {
             squid_l_red: { name: "Large Squid (Red)", price: 35, img: "squid_l_red.png" },
@@ -133,12 +150,15 @@
             const data = snap.val() || {}; isFlash = data.active && data.end > Date.now();
             document.body.classList.toggle('flash-active', isFlash);
             document.getElementById('flash-timer-box').classList.toggle('hidden', !isFlash);
+            document.getElementById('total-sale-tag').classList.toggle('hidden', !isFlash);
             if(isFlash) { setInterval(() => {
                 const diff = data.end - Date.now();
+                if(diff <= 0) return;
                 const m = Math.floor(diff/60000), s = Math.floor((diff%60000)/1000);
                 document.getElementById('timer-display').innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
             }, 1000); }
             renderInventory();
+            updateCartDisplay();
         });
 
         db.ref('stock').on('value', snap => { stock = snap.val() || {}; renderInventory(); });
@@ -157,7 +177,11 @@
                             ${id === bestSellerId ? '<span class="bg-blue-600 text-white text-[8px] px-2 py-0.5 rounded-full font-black uppercase">Popular</span>' : ''}
                         </div>
                         <h3 class="font-black text-sm uppercase italic">${itemsData[id].name}</h3>
-                        <p class="font-black text-lg" style="color:var(--accent)">${p}฿</p>
+                        <div class="flex items-center gap-2">
+                           <p class="font-black text-lg" style="color:var(--accent)">${p}฿</p>
+                           ${isFlash ? '<span class="text-[9px] bg-red-600 text-white px-1.5 py-0.5 rounded-md font-black italic">-10%</span>' : ''}
+                        </div>
+                        <p class="text-[10px] font-black opacity-40 uppercase tracking-tighter">Stock: ${s}</p>
                     </div>
                     <div class="flex items-center gap-3 bg-slate-500/10 p-2 rounded-2xl">
                         <button onclick="updateQty('${id}',-1);playPop()" class="w-8 h-8 font-black">-</button>
