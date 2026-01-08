@@ -31,6 +31,7 @@
                 <p class="text-xs font-bold opacity-50 uppercase tracking-widest">Admin Control Panel v2.0</p>
             </div>
             <div class="flex gap-4">
+                <button onclick="exportOrders()" class="px-6 py-4 rounded-2xl font-black uppercase text-xs bg-slate-700 hover:bg-slate-600 transition-all">Export Orders</button>
                 <button id="shop-toggle" onclick="toggleShop()" class="px-8 py-4 rounded-2xl font-black uppercase text-xs transition-all"></button>
             </div>
         </header>
@@ -54,7 +55,10 @@
                 </div>
 
                 <div class="panel-card p-8">
-                    <h2 class="text-xl font-black uppercase italic text-blue-500 mb-6">Inventory Management</h2>
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-black uppercase italic text-blue-500">Inventory</h2>
+                        <button onclick="resetAllStock()" class="text-[10px] bg-red-600/20 text-red-500 border border-red-500/50 px-3 py-1.5 rounded-lg font-black uppercase hover:bg-red-600 hover:text-white transition-all">Zero All Stock</button>
+                    </div>
                     <div id="stock-list" class="space-y-4"></div>
                 </div>
             </div>
@@ -133,6 +137,32 @@
         });
         function adjStock(id, amt) {
             db.ref('stock/'+id).transaction(c => (c || 0) + amt);
+        }
+
+        function resetAllStock() {
+            if(confirm("DANGER: This will set all stock to ZERO. Proceed?")) {
+                const updates = {};
+                items.forEach(id => updates[id] = 0);
+                db.ref('stock').update(updates);
+            }
+        }
+
+        async function exportOrders() {
+            const snap = await db.ref('orders').once('value');
+            const orders = snap.val() || {};
+            let text = "--- THE BAG ORDER EXPORT ---\n\n";
+            Object.values(orders).forEach(o => {
+                const date = new Date(o.timestamp).toLocaleString();
+                text += `[${o.status.toUpperCase()}] ${o.name} (Grade ${o.grade})\n`;
+                text += `Items: ${o.items}\n`;
+                text += `Method: ${o.location} | Time: ${date}\n`;
+                text += `----------------------------\n`;
+            });
+            const blob = new Blob([text], {type: "text/plain"});
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = `the-bag-orders-${Date.now()}.txt`;
+            a.click();
         }
     </script>
 </body>
