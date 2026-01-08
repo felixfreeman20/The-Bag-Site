@@ -57,9 +57,10 @@
                 <div class="panel-card p-8">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-xl font-black uppercase italic text-blue-500">Inventory</h2>
-                        <button onclick="resetAllStock()" class="text-[10px] bg-red-600/20 text-red-500 border border-red-500/50 px-3 py-1.5 rounded-lg font-black uppercase hover:bg-red-600 hover:text-white transition-all">Zero All Stock</button>
+                        <button onclick="resetAllStock()" class="text-[10px] bg-red-600/20 text-red-500 border border-red-500/50 px-3 py-1.5 rounded-lg font-black uppercase hover:bg-red-600 hover:text-white transition-all">Zero All</button>
                     </div>
-                    <div id="stock-list" class="space-y-4"></div>
+                    <div id="stock-list" class="space-y-3"></div>
+                    <button onclick="updateAllStock()" class="w-full mt-6 bg-blue-600 p-4 rounded-2xl font-black uppercase text-sm shadow-lg shadow-blue-900/20 hover:scale-[1.02] active:scale-[0.98] transition-all">Update All Stock Levels</button>
                 </div>
             </div>
         </div>
@@ -75,7 +76,6 @@
             } else { alert("Access Denied"); }
         }
 
-        // Shop Toggle
         let shopOpen = true;
         db.ref('settings/storeOpen').on('value', snap => {
             shopOpen = snap.val();
@@ -85,14 +85,12 @@
         });
         function toggleShop() { db.ref('settings').update({ storeOpen: !shopOpen }); }
 
-        // Flash Sale
         function startFlash() {
             const mins = document.getElementById('flash-mins').value || 10;
             db.ref('settings/flashSale').set({ active: true, end: Date.now() + (mins * 60000) });
         }
         function stopFlash() { db.ref('settings/flashSale').set({ active: false, end: 0 }); }
 
-        // Live Orders
         db.ref('orders').on('value', snap => {
             const list = document.getElementById('order-list');
             list.innerHTML = "";
@@ -116,7 +114,6 @@
         });
         function updateStatus(id, s) { db.ref('orders/'+id).update({ status: s }); }
 
-        // Stock Management
         const items = ['squid_r', 'squid_o', 'squid_g', 'squid_l_red', 'squid_l_orange', 'doritos', 'pocky', 'oreo', 'lays_s', 'lays_n', 'gummy', 'gum'];
         
         db.ref('stock').on('value', snap => {
@@ -126,18 +123,12 @@
             items.forEach(id => {
                 const count = data[id] || 0;
                 list.innerHTML += `
-                <div class="flex flex-col bg-slate-900/50 p-4 rounded-2xl border border-slate-800 gap-3">
-                    <div class="flex items-center justify-between">
-                        <span class="font-bold text-xs uppercase italic">${id.replace(/_/g,' ')}</span>
-                        <div class="flex items-center gap-4">
-                            <button onclick="adjStock('${id}', -1)" class="w-8 h-8 bg-slate-800 rounded-lg font-black">-</button>
-                            <span class="w-8 text-center font-black text-blue-500">${count}</span>
-                            <button onclick="adjStock('${id}', 1)" class="w-8 h-8 bg-slate-800 rounded-lg font-black">+</button>
-                        </div>
-                    </div>
-                    <div class="flex gap-2">
-                        <input type="number" id="manual-${id}" placeholder="New total" class="flex-1 bg-slate-800 p-2 rounded-lg text-xs font-bold outline-none border border-slate-700">
-                        <button onclick="setStock('${id}')" class="bg-blue-600 px-4 py-2 rounded-lg text-[10px] font-black uppercase">Update Stock</button>
+                <div class="flex items-center justify-between bg-slate-900/40 p-3 rounded-xl border border-slate-800">
+                    <span class="font-bold text-[10px] uppercase italic opacity-70">${id.replace(/_/g,' ')}</span>
+                    <div class="flex items-center gap-3">
+                        <button onclick="adjStock('${id}', -1)" class="w-6 h-6 bg-slate-800 rounded flex items-center justify-center font-black">-</button>
+                        <input type="number" id="manual-${id}" placeholder="${count}" class="w-12 bg-transparent text-center font-black text-blue-500 outline-none">
+                        <button onclick="adjStock('${id}', 1)" class="w-6 h-6 bg-slate-800 rounded flex items-center justify-center font-black">+</button>
                     </div>
                 </div>`;
             });
@@ -145,11 +136,18 @@
 
         function adjStock(id, amt) { db.ref('stock/'+id).transaction(c => (c || 0) + amt); }
         
-        function setStock(id) {
-            const val = document.getElementById('manual-'+id).value;
-            if(val === "") return;
-            db.ref('stock/'+id).set(parseInt(val));
-            document.getElementById('manual-'+id).value = "";
+        function updateAllStock() {
+            const updates = {};
+            items.forEach(id => {
+                const val = document.getElementById('manual-'+id).value;
+                if(val !== "") updates[id] = parseInt(val);
+            });
+            if(Object.keys(updates).length > 0) {
+                db.ref('stock').update(updates).then(() => {
+                    alert("Stock Levels Synced!");
+                    items.forEach(id => document.getElementById('manual-'+id).value = "");
+                });
+            }
         }
 
         function resetAllStock() {
