@@ -14,7 +14,7 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text); transition: background 0.3s ease; text-align: left; }
         .bg-card { background-color: var(--card); border-color: var(--border); }
         .blue-gradient { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
-        .hidden { display: none; }
+        .hidden { display: none !important; }
         .sold-out { opacity: 0.4; filter: grayscale(1); } 
         #about-sidebar { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); transform: translateX(-100%); }
         #about-sidebar.open { transform: translateX(0); }
@@ -25,10 +25,11 @@
 
     <div id="about-sidebar" class="fixed top-0 left-0 h-full w-80 bg-white z-[600] shadow-2xl p-8 flex flex-col text-slate-900">
         <button onclick="toggleMenu()" class="text-slate-400 text-sm font-black uppercase tracking-widest mb-10 text-left">✕ Close</button>
-        <div class="flex-1">
+        <div class="flex-1 overflow-y-auto">
             <h2 class="text-3xl font-black text-blue-600 italic uppercase mb-6">The Story.</h2>
-            <p class="text-slate-600 leading-relaxed mb-6 font-medium text-sm">Founded by Alon and Sean to bridge the gap between hunger and class.</p>
-            <div class="space-y-4">
+            <p class="text-slate-600 leading-relaxed mb-8 font-medium text-sm">Founded by Alon and Sean to bridge the gap between hunger and class.</p>
+            
+            <div class="space-y-4 mb-10">
                 <div class="bg-cyan-50 p-4 rounded-2xl border border-cyan-100">
                     <p class="text-[10px] font-black text-cyan-600 uppercase tracking-widest">Founder</p>
                     <p class="text-lg font-bold">Alon Katz</p>
@@ -38,8 +39,14 @@
                     <p class="text-lg font-bold">Sean Raynes</p>
                 </div>
             </div>
+
+            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Contact Support</h3>
+            <div class="space-y-2 text-xs font-bold text-slate-600">
+                <p>📧 200050@ucis.ac.th</p>
+                <p>📧 250054@ucis.ac.th</p>
+            </div>
         </div>
-        <div class="text-[10px] text-slate-300 font-bold uppercase tracking-widest">UCIS Premium Fuel © 2026</div>
+        <div class="pt-6 text-[10px] text-slate-300 font-bold uppercase tracking-widest">UCIS Premium Fuel © 2026</div>
     </div>
 
     <nav id="main-nav" class="bg-card backdrop-blur-md p-4 border-b sticky top-0 z-50 flex items-center px-6">
@@ -157,8 +164,8 @@
 
         function setMethod(m) {
             method = m; deliveryFee = (m === "Delivery") ? 15 : 0;
-            document.getElementById('btn-pickup').className = m === "Pickup" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white shadow-sm" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-400";
-            document.getElementById('btn-delivery').className = m === "Delivery" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white shadow-sm" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-400";
+            document.getElementById('btn-pickup').className = m === "Pickup" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white shadow-sm transition-all" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-400 transition-all";
+            document.getElementById('btn-delivery').className = m === "Delivery" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white shadow-sm transition-all" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-400 transition-all";
             document.getElementById('loc-container').classList.toggle('hidden', m !== 'Delivery');
             updateCartDisplay();
         }
@@ -215,19 +222,15 @@
             
             const newRef = await db.ref('orders').push(orderData); await db.ref().update(updates);
             
-            // Listen for cancellation for THIS order specifically
             db.ref('orders/' + newRef.key).on('value', snap => {
-                if(!snap.exists() && document.getElementById('receipt-page').classList.contains('active-receipt')) {
-                    // If the order is deleted from DB but student hasn't left page, it means staff handled it.
-                    // However, we only show "Cancelled" if the staff uses the 'cancelled' flag logic.
-                }
-                if(snap.val() && snap.val().status === 'cancelled') {
-                    showCancelledScreen();
-                }
+                if(snap.val() && snap.val().status === 'cancelled') showCancelledScreen();
             });
 
+            // HIDE ALL ORDERING UI
             document.getElementById('order-flow').classList.add('hidden');
+            document.getElementById('bottom-bar').classList.add('hidden');
             document.getElementById('rules-modal').classList.add('hidden');
+
             document.getElementById('receipt-page').classList.add('active-receipt');
             document.getElementById('receipt-id').innerText = "ID: #" + newRef.key.slice(-4).toUpperCase();
             document.getElementById('receipt-total').innerText = finalTotal + "฿";
