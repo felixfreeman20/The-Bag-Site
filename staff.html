@@ -2,79 +2,89 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>STAFF | The Bag</title>
+    <title>THE BAG | Staff Control</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
-    <style>
-        body { background: #020617; color: white; font-family: 'Plus Jakarta Sans', sans-serif; }
-        .tab-btn.active { color: #3b82f6; border-bottom: 3px solid #3b82f6; }
-    </style>
+    <style>body { background: #020617; color: white; font-family: 'Plus Jakarta Sans', sans-serif; }</style>
 </head>
 <body class="p-8">
-    <audio id="pop-sound" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3" preload="auto"></audio>
-    
     <header class="flex justify-between items-center mb-10">
-        <h1 class="text-3xl font-black italic text-blue-500 uppercase">Staff HQ</h1>
-        <div class="flex gap-8">
-            <button onclick="setTab('new')" id="tab-new" class="tab-btn active font-black uppercase text-xs">New</button>
-            <button onclick="setTab('active')" id="tab-active" class="tab-btn font-black uppercase text-xs">Active</button>
-            <button onclick="setTab('complete')" id="tab-complete" class="tab-btn font-black uppercase text-xs">History</button>
+        <h1 class="text-3xl font-black italic text-blue-500 uppercase">Control Center</h1>
+        <div class="flex gap-4">
+            <button onclick="toggleFlash()" id="flash-btn" class="bg-red-900 px-6 py-2 rounded-xl font-bold text-xs">FLASH SALE: OFF</button>
+            <button onclick="toggleStore()" id="store-btn" class="bg-green-900 px-6 py-2 rounded-xl font-bold text-xs">STORE: OPEN</button>
         </div>
     </header>
 
-    <div id="order-list" class="grid gap-6"></div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+        <section>
+            <h2 class="text-xl font-black mb-6 uppercase">Active Orders</h2>
+            <div id="order-list" class="space-y-4"></div>
+        </section>
+
+        <section>
+            <h2 class="text-xl font-black mb-6 uppercase">Inventory Management</h2>
+            <div id="stock-list" class="bg-slate-900 p-6 rounded-[2rem] border border-slate-800 grid grid-cols-2 gap-4"></div>
+        </section>
+    </div>
 
     <script>
         const firebaseConfig = { apiKey: "AIzaSyAFGoJyyvtspQSauHUrWvSBWNF2taGJOYE", databaseURL: "https://thebagsite-default-rtdb.asia-southeast1.firebasedatabase.app/", projectId: "thebagsite" };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        let currentTab = 'new';
+        firebase.initializeApp(firebaseConfig); const db = firebase.database();
 
-        function playPop() { document.getElementById('pop-sound').play(); }
-        function setTab(t) { 
-            playPop(); currentTab = t; 
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('tab-' + t).classList.add('active');
-            renderOrders(); 
-        }
-
-        db.ref('orders').on('value', renderOrders);
-
-        function renderOrders() {
-            db.ref('orders').once('value', snap => {
-                const list = document.getElementById('order-list');
-                list.innerHTML = "";
-                const data = snap.val() || {};
-                Object.keys(data).reverse().forEach(id => {
-                    const o = data[id];
-                    if (currentTab === 'new' && o.status !== 'pending') return;
-                    if (currentTab === 'active' && o.status !== 'active') return;
-                    if (currentTab === 'complete' && o.status !== 'completed') return;
-
-                    list.innerHTML += `
-                    <div class="bg-slate-900 p-8 rounded-[2rem] border border-slate-800">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <h3 class="text-xl font-black italic uppercase">${o.name} <span class="text-blue-500 font-mono text-sm">[${o.grade}]</span></h3>
-                                <p class="text-slate-400 font-bold mt-2">${o.items}</p>
-                                <p class="text-[10px] font-black uppercase text-slate-500 mt-4 tracking-widest">📍 ${o.loc}</p>
-                            </div>
-                            <div class="flex gap-3">
-                                ${currentTab === 'new' ? `
-                                    <button onclick="update('${id}', 'active')" class="bg-green-600 px-6 py-3 rounded-xl font-black text-xs">ACCEPT</button>
-                                    <button onclick="update('${id}', 'cancelled')" class="bg-red-600 px-6 py-3 rounded-xl font-black text-xs">DECLINE</button>
-                                ` : ''}
-                                ${currentTab === 'active' ? `
-                                    <button onclick="update('${id}', 'completed')" class="bg-blue-600 px-6 py-3 rounded-xl font-black text-xs">COMPLETE</button>
-                                ` : ''}
-                            </div>
-                        </div>
-                    </div>`;
-                });
+        // 1. FLASH & STORE CONTROLS
+        function toggleFlash() {
+            db.ref('settings/flashSale').once('value', s => {
+                const active = !s.val()?.active;
+                db.ref('settings/flashSale').update({ active, end: active ? Date.now() + 3600000 : 0 });
             });
         }
-        function update(id, s) { playPop(); db.ref('orders/' + id).update({ status: s }); }
+        db.ref('settings/flashSale').on('value', s => {
+            const a = s.val()?.active;
+            document.getElementById('flash-btn').innerText = `FLASH SALE: ${a ? 'ON' : 'OFF'}`;
+            document.getElementById('flash-btn').className = a ? "bg-red-600 px-6 py-2 rounded-xl font-bold text-xs" : "bg-red-900 px-6 py-2 rounded-xl font-bold text-xs";
+        });
+
+        // 2. ORDERS LOGIC
+        db.ref('orders').on('value', snap => {
+            const list = document.getElementById('order-list'); list.innerHTML = "";
+            const data = snap.val() || {};
+            Object.keys(data).reverse().forEach(id => {
+                const o = data[id]; if (o.status === 'completed' || o.status === 'cancelled') return;
+                list.innerHTML += `
+                <div class="bg-slate-900 p-6 rounded-2xl border ${o.status === 'pending' ? 'border-yellow-500' : 'border-slate-800'}">
+                    <h3 class="font-black uppercase">${o.name} [${o.grade}]</h3>
+                    <p class="text-blue-400 font-bold text-sm">${o.items}</p>
+                    <p class="text-[10px] text-slate-500 mt-2 italic">📍 ${o.loc}</p>
+                    <div class="flex gap-2 mt-4">
+                        ${o.status === 'pending' ? `<button onclick="upd('${id}', 'active')" class="bg-green-600 flex-1 py-2 rounded-lg font-bold text-[10px]">ACCEPT</button>` : `<button onclick="upd('${id}', 'completed')" class="bg-blue-600 flex-1 py-2 rounded-lg font-bold text-[10px]">COMPLETE</button>`}
+                        <button onclick="upd('${id}', 'cancelled')" class="bg-red-600 flex-1 py-2 rounded-lg font-bold text-[10px]">DECLINE</button>
+                    </div>
+                </div>`;
+            });
+        });
+        function upd(id, s) { db.ref('orders/' + id).update({ status: s }); }
+
+        // 3. STOCK LOGIC
+        const snacks = ["squid_l_red", "squid_l_orange", "squid_g", "squid_o", "squid_r", "doritos", "pocky", "oreo", "lays_s", "lays_n", "gummy", "gum"];
+        db.ref('stock').on('value', snap => {
+            const sList = document.getElementById('stock-list'); sList.innerHTML = "";
+            const stock = snap.val() || {};
+            snacks.forEach(id => {
+                const count = stock[id] || 0;
+                sList.innerHTML += `
+                <div class="flex items-center justify-between bg-slate-800 p-3 rounded-xl">
+                    <span class="text-[10px] font-black uppercase">${id.replace('_',' ')}</span>
+                    <div class="flex items-center gap-2">
+                        <button onclick="changeStock('${id}', -1)" class="bg-slate-700 w-6 h-6 rounded">-</button>
+                        <span class="font-mono font-bold w-4 text-center">${count}</span>
+                        <button onclick="changeStock('${id}', 1)" class="bg-slate-700 w-6 h-6 rounded">+</button>
+                    </div>
+                </div>`;
+            });
+        });
+        function changeStock(id, amt) { db.ref('stock/'+id).transaction(c => (c||0) + amt); }
     </script>
 </body>
 </html>
