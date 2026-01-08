@@ -162,4 +162,163 @@
 
         let cart = {}, stock = {}, salesStats = {}, method = "Pickup", deliveryFee = 0;
 
-        function toggleMenu() { document.getElementById('about-sidebar').
+        function toggleMenu() { document.getElementById('about-sidebar').classList.toggle('open'); }
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            document.getElementById('dark-toggle').innerText = document.body.classList.contains('dark-mode') ? "☀️" : "🌙";
+        }
+
+        db.ref('settings/isOpen').on('value', snap => {
+            const open = snap.val();
+            document.getElementById('store-content').classList.toggle('hidden', !open);
+            document.getElementById('bottom-bar').classList.toggle('hidden', !open);
+            document.getElementById('closed-message').classList.toggle('hidden', open);
+        });
+
+        function setMethod(m) {
+            method = m; deliveryFee = (m === "Delivery") ? 15 : 0;
+            document.getElementById('btn-pickup').className = m === "Pickup" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white shadow-sm transition-all" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-400 transition-all";
+            document.getElementById('btn-delivery').className = m === "Delivery" ? "flex-1 py-3 rounded-xl font-bold text-sm bg-blue-600 text-white shadow-sm transition-all" : "flex-1 py-3 rounded-xl font-bold text-sm text-slate-400 transition-all";
+            document.getElementById('loc-container').classList.toggle('hidden', m !== 'Delivery');
+            updateCartDisplay();
+        }
+
+        // FETCH STOCK & SALES STATS
+        db.ref('stock').on('value', snap => { stock = snap.val() || {}; renderInventory(); });
+        db.ref('sales_counts').on('value', snap => { salesStats = snap.val() || {}; renderInventory(); });
+
+        function renderInventory() {
+            const container = document.getElementById('inventory-container');
+            if(!container) return;
+            container.innerHTML = "";
+            const sortedIds = Object.keys(itemsData).sort((a,b) => (stock[b]||0) - (stock[a]||0));
+
+            // FIND TOP SELLER (Max value in salesStats)
+            let topSellerId = null;
+            let maxSold = 0;
+            for(let id in salesStats) {
+                if(salesStats[id] > maxSold) { maxSold = salesStats[id]; topSellerId = id; }
+            }
+
+            sortedIds.forEach(id => {
+                const s = stock[id] || 0;
+                
+                // FEATURE 4: Top Seller Badge
+                let badgesHTML = "";
+                if(topSellerId === id && maxSold > 0) {
+                    badgesHTML += `<span class="badge-fire">🔥 Top Pick</span>`;
+                }
+
+                // FEATURE 1: Low Stock Warning (2 or less)
+                if(s > 0 && s <= 2) {
+                    badgesHTML += `<span class="badge-low ml-2">⚠️ Only ${s} Left</span>`;
+                }
+
+                container.innerHTML += `
+                <div class="snack-card bg-card p-6 rounded-[2rem] shadow-sm flex justify-between items-center border ${s <= 0 ? 'sold-out' : ''}">
+                    <div>
+                        <div class="mb-1">${badgesHTML}</div>
+                        <h3 class="font-bold text-lg">${itemsData[id].name}</h3>
+                        <p class="text-blue-600 font-black">${itemsData[id].price} THB</p>
+                    </div>
+                    <div class="flex items-center gap-4 bg-slate-500/10 p-1.5 rounded-2xl">
+                        <button onclick="updateQty('${id}', -1)" class="w-10 h-10 bg-card rounded-xl shadow-sm font-bold border border-blue-500/10">-</button>
+                        <span id="${id}-qty" class="text-lg font-black w-6 text-center text-blue-600">${cart[id] || 0}</span>
+                        <button onclick="updateQty('${id}', 1)" class="w-10 h-10 bg-card rounded-xl shadow-sm font-bold border border-blue-500/10" ${s <= (cart[id]||0) ? 'disabled' : ''}>+</button>
+                    </div>
+                </div>`;
+            });
+        }
+
+        function updateQty(id, amt) {
+            cart[id] = Math.max(0, Math.min(stock[id], (cart[id] || 0) + amt));
+            document.getElementById(id + '-qty').innerText = cart[id];
+            updateCartDisplay();
+        }
+
+        function updateCartDisplay() {
+            let total = deliveryFee;
+            for (let id in cart) total += (cart[id] * itemsData[id].price);
+            document.getElementById('total-display').innerText = total + " THB";
+            return total;
+        }
+
+        function showRules() {
+            if(!document.getElementById('cust-name').value) return alert("Enter Name First");
+            document.getElementById('rules-modal').classList.remove('hidden');
+        }
+
+        async function submitOrder() {
+            const itemsArr = []; const cartMap = {};
+            for(let id in cart) { if(cart[id] > 0) { itemsArr.push(`${itemsData[id].name} x${cart[id]}`); cartMap[id] = cart[id]; } }
+            if(itemsArr.length === 0) return alert("Empty Cart!");
+            
+            const finalTotal = updateCartDisplay();
+            const orderData = { 
+                name: document.getElementById('cust-name').value, 
+                grade: document.getElementById('cust-grade').value, 
+                loc: (method === 'Pickup' ? "Falcons Nest" : document.getElementById('cust-loc').value), 
+                items: itemsArr.join(', '), 
+                rawItems: cartMap,
+                total: finalTotal, 
+                status: 'active',
+                timestamp: Date.now() 
+            };
+
+            // DB Updates
+            const freshSnap = await db.ref('stock').once('value'); const fs = freshSnap.val();
+            const salesSnap = await db.ref('sales_counts').once('value'); const ss = salesSnap.val() || {};
+            
+            let updates = {}; 
+            for(let id in cartMap) { 
+                updates[`/stock/${id}`] = (fs[id] || 0) - cartMap[id];
+                updates[`/sales_counts/${id}`] = (ss[id] || 0) + cartMap[id]; // UPDATE SALES STATS
+            }
+            
+            const newRef = await db.ref('orders').push(orderData); await db.ref().update(updates);
+            
+            // FEATURE 5: Dynamic Wait Time Calculation
+            const activeSnap = await db.ref('orders').orderByChild('status').equalTo('active').once('value');
+            const activeCount = activeSnap.exists() ? Object.keys(activeSnap.val()).length : 1;
+            const waitTimeMin = 5 + (activeCount * 3); // Base 5 mins + 3 mins per order
+            const waitTimeMax = waitTimeMin + 5;
+
+            // FEATURE 7: Play Sound (Soft Volume)
+            const sound = document.getElementById('success-sound');
+            sound.volume = 0.4;
+            sound.play().catch(e => console.log("Audio play failed:", e));
+
+            // FEATURE 3: Confetti (Not too much)
+            confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 } });
+
+            // Listen for cancellation
+            db.ref('orders/' + newRef.key).on('value', snap => {
+                if(snap.val() && snap.val().status === 'cancelled') showCancelledScreen();
+            });
+
+            // HIDE UI
+            document.getElementById('order-flow').classList.add('hidden');
+            document.getElementById('bottom-bar').classList.add('hidden');
+            document.getElementById('rules-modal').classList.add('hidden');
+
+            document.getElementById('receipt-page').classList.add('active-receipt');
+            document.getElementById('receipt-id').innerText = "ID: #" + newRef.key.slice(-4).toUpperCase();
+            document.getElementById('receipt-total').innerText = finalTotal + "฿";
+            document.getElementById('receipt-items').innerText = itemsArr.join(', ');
+            document.getElementById('receipt-location').innerText = orderData.loc;
+            document.getElementById('est-time').innerText = `${waitTimeMin}-${waitTimeMax} mins`; // Dynamic Time
+            document.getElementById('receipt-page').classList.remove('hidden');
+            window.scrollTo(0,0);
+        }
+
+        function showCancelledScreen() {
+            document.getElementById('receipt-header').className = "bg-red-600 p-10 text-white text-center";
+            document.getElementById('receipt-icon').innerHTML = "✕";
+            document.getElementById('receipt-status-text').innerText = "Bag Cancelled";
+            document.getElementById('receipt-details').classList.add('hidden');
+            document.getElementById('cancelled-content').classList.remove('hidden');
+            document.getElementById('receipt-card').classList.replace('border-blue-600', 'border-red-600');
+        }
+    </script>
+</body>
+</html>
