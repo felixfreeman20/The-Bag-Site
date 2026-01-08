@@ -13,15 +13,12 @@
 </head>
 <body class="p-6">
     <audio id="pop-sound" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3" preload="auto"></audio>
-    
     <header class="flex justify-between items-center mb-10 pb-6 border-b border-slate-800">
         <div class="flex items-center gap-4">
             <img src="logo.png" class="h-12 w-12 object-contain">
             <h1 class="text-3xl font-black italic text-blue-500 uppercase">Bag HQ</h1>
         </div>
-        <div class="flex gap-4">
-            <button onclick="toggleFlash()" id="flash-btn" class="bg-red-600 px-8 py-3 rounded-2xl font-black text-xs uppercase">Flash Sale: OFF</button>
-        </div>
+        <button onclick="toggleFlash()" id="flash-btn" class="bg-red-600 px-8 py-3 rounded-2xl font-black text-xs uppercase">Flash Sale: OFF</button>
     </header>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -29,9 +26,8 @@
             <h2 class="text-xs font-black uppercase text-slate-500 mb-6 tracking-widest">Active Operations</h2>
             <div id="order-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
         </div>
-
         <div class="card-bg p-6 h-fit">
-            <h2 class="text-xs font-black uppercase text-slate-500 mb-6 tracking-widest">Inventory</h2>
+            <h2 class="text-xs font-black uppercase text-slate-500 mb-6 tracking-widest">Inventory Control</h2>
             <div id="stock-list" class="space-y-2"></div>
         </div>
     </div>
@@ -42,7 +38,6 @@
 
         function playPop() { document.getElementById('pop-sound').play(); }
 
-        // ORDERS
         db.ref('orders').on('value', snap => {
             const list = document.getElementById('order-list'); list.innerHTML = "";
             const data = snap.val() || {};
@@ -68,7 +63,6 @@
             });
         });
 
-        // INVENTORY
         const snacks = ["squid_l_red", "squid_l_orange", "squid_g", "squid_o", "squid_r", "doritos", "pocky", "oreo", "lays_s", "lays_n", "gummy", "gum"];
         db.ref('stock').on('value', snap => {
             const sList = document.getElementById('stock-list'); sList.innerHTML = "";
@@ -86,7 +80,6 @@
             });
         });
 
-        // FLASH SALE TOGGLE
         function toggleFlash() {
             playPop();
             db.ref('settings/flashSale').once('value', snap => {
