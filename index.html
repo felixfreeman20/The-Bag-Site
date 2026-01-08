@@ -22,12 +22,9 @@
         .snack-img { width: 100px; height: 120px; object-fit: cover; border-radius: 1.5rem; background: #f1f5f9; }
         .dark-mode .snack-img { background: #1e293b; }
         #inventory-container { max-height: 650px; overflow-y: auto; display: flex; flex-direction: column; gap: 1.25rem; scrollbar-width: none; }
-        
-        /* FLASH SALE STYLES */
         @keyframes flash-border { 0% { border-color: #ef4444; } 50% { border-color: #fca5a5; } 100% { border-color: #ef4444; } }
         .flash-active-card { animation: flash-border 1s infinite; border-width: 2px !important; }
         .old-price { color: #94a3b8; text-decoration: line-through; font-size: 0.8em; margin-right: 4px; }
-        
         .method-btn { transition: all 0.2s; color: #94a3b8; font-weight: 800; }
         .method-btn.active { background: #3b82f6 !important; color: white !important; }
     </style>
@@ -47,7 +44,7 @@
         </div>
     </div>
 
-    <div id="pending-screen" class="fixed inset-0 z-[800] hidden flex items-center justify-center p-6 bg-slate-900/95 backdrop-blur-md text-white text-center text-white">
+    <div id="pending-screen" class="fixed inset-0 z-[800] hidden flex items-center justify-center p-6 bg-slate-900/95 backdrop-blur-md text-white text-center">
         <div>
             <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
             <h2 class="text-3xl font-black italic uppercase">Securing Bag...</h2>
@@ -60,13 +57,11 @@
         <div class="flex-1 overflow-y-auto">
             <h2 class="text-3xl font-black text-blue-600 italic uppercase mb-4">The Story.</h2>
             <p class="text-slate-600 leading-relaxed mb-8 text-sm font-medium italic">The Bag Team founded this project to bring premium snacks directly to your classroom.</p>
-            
             <div class="bg-gradient-to-br from-yellow-400 to-orange-500 p-6 rounded-[2rem] text-white shadow-lg mb-8">
                 <p class="text-[10px] font-black uppercase mb-1 opacity-90">Rewards System</p>
                 <h4 class="text-xl font-black italic uppercase">Promo Codes</h4>
                 <p class="text-[10px] font-bold mt-2 bg-black/10 inline-block px-2 py-1 rounded-lg uppercase tracking-widest">Coming Soon</p>
             </div>
-
             <div class="space-y-4 mb-10">
                 <div class="bg-cyan-50 p-4 rounded-2xl border border-cyan-100"><p class="text-[10px] font-black text-cyan-600 uppercase tracking-widest">Founder</p><p class="text-lg font-bold">Alon Katz</p></div>
                 <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100"><p class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Co-Founder</p><p class="text-lg font-bold">Sean Raynes</p></div>
@@ -91,7 +86,6 @@
                 <div><h2 class="text-3xl font-black italic uppercase">10% OFF!</h2><p class="text-xs font-bold opacity-80 uppercase">Flash Sale Activated</p></div>
                 <div class="text-right bg-white/20 p-4 rounded-3xl"><p id="flash-timer" class="text-2xl font-black font-mono">00:00</p></div>
             </div>
-
             <section class="bg-card p-8 rounded-[2.5rem] shadow-sm border mb-8">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <input type="text" id="cust-name" placeholder="Name" class="bg-slate-500/10 p-5 rounded-2xl outline-none font-bold text-[var(--text)]">
@@ -150,14 +144,17 @@
             gum: { name: "Chewing Gum", price: 30, img: "gum.png" }
         };
 
-        let cart = {}, stock = {}, method = "Pickup", deliveryFee = 0, isFlash = false;
+        // INITIAL STOCK INJECTION
+        let cart = {}, stock = {
+            squid_l_red: 10, squid_l_orange: 10, squid_g: 10, squid_o: 10, squid_r: 10,
+            doritos: 10, pocky: 10, oreo: 10, lays_s: 10, lays_n: 10, gummy: 10, gum: 10
+        }, method = "Pickup", deliveryFee = 0, isFlash = false;
 
         function playPop() { document.getElementById('pop-sound').play().catch(()=>{}); }
         function toggleMenu() { document.getElementById('about-sidebar').classList.toggle('open'); }
         function toggleDarkMode() { document.body.classList.toggle('dark-mode'); }
         function showRules() { document.getElementById('rules-modal').classList.remove('hidden'); }
 
-        // FLASH SALE WATCHER
         db.ref('settings/flashSale').on('value', snap => {
             const data = snap.val() || { active: false, end: 0 };
             isFlash = data.active && data.end > Date.now();
@@ -166,18 +163,7 @@
             renderInventory(); updateCartDisplay();
         });
 
-        setInterval(() => {
-            if(!isFlash) return;
-            db.ref('settings/flashSale/end').once('value', snap => {
-                const rem = snap.val() - Date.now();
-                if(rem > 0) {
-                    const m = Math.floor(rem/60000); const s = Math.floor((rem%60000)/1000);
-                    document.getElementById('flash-timer').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
-                }
-            });
-        }, 1000);
-
-        db.ref('stock').on('value', snap => { stock = snap.val() || {}; renderInventory(); });
+        db.ref('stock').on('value', snap => { if(snap.val()) { stock = snap.val(); renderInventory(); } });
 
         function renderInventory() {
             const container = document.getElementById('inventory-container');
@@ -191,13 +177,14 @@
                     <div class="flex-1">
                         <div class="flex justify-between items-start">
                             <h3 class="font-black text-sm text-[var(--text)]">${item.name}</h3>
+                            <span class="text-[10px] font-black ${s > 0 ? 'text-blue-500' : 'text-red-500'} uppercase">${s} In Stock</span>
                         </div>
                         <div class="flex items-center justify-between mt-4">
                             <span class="text-blue-600 font-black">${isFlash ? `<span class="old-price">${item.price}฿</span>` : ''}${price}฿</span>
                             <div class="flex items-center gap-3 bg-slate-500/10 p-1 rounded-xl">
-                                <button onclick="updateQty('${id}', -1); playPop()" class="w-8 h-8 font-black text-[var(--text)]">-</button>
+                                <button onclick="updateQty('${id}', -1); playPop()" class="w-8 h-8 font-black">-</button>
                                 <span class="font-black text-blue-600">${cart[id] || 0}</span>
-                                <button onclick="updateQty('${id}', 1); playPop()" class="w-8 h-8 font-black text-[var(--text)]" ${s <= (cart[id]||0) ? 'disabled' : ''}>+</button>
+                                <button onclick="updateQty('${id}', 1); playPop()" class="w-8 h-8 font-black" ${s <= (cart[id]||0) ? 'disabled' : ''}>+</button>
                             </div>
                         </div>
                     </div>
@@ -221,13 +208,10 @@
 
         async function submitOrder() {
             const itemsArr = []; for(let id in cart) if(cart[id] > 0) itemsArr.push(`${itemsData[id].name} x${cart[id]}`);
-            if(!document.getElementById('cust-name').value || itemsArr.length === 0) return alert("Error!");
-            const finalTotal = updateCartDisplay();
-            const ref = await db.ref('orders').push({ name: document.getElementById('cust-name').value, grade: document.getElementById('cust-grade').value, items: itemsArr.join(', '), status: 'pending', timestamp: Date.now(), total: finalTotal });
-            
+            if(!document.getElementById('cust-name').value || itemsArr.length === 0) return alert("Fill in details!");
+            const ref = await db.ref('orders').push({ name: document.getElementById('cust-name').value, grade: document.getElementById('cust-grade').value, items: itemsArr.join(', '), status: 'pending', timestamp: Date.now(), total: updateCartDisplay() });
             document.getElementById('rules-modal').classList.add('hidden');
             document.getElementById('pending-screen').classList.remove('hidden');
-
             db.ref('orders/' + ref.key).on('value', snap => {
                 const o = snap.val();
                 if (o?.status === 'active') {
