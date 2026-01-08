@@ -90,13 +90,11 @@
             const orderSnap = await db.ref('orders/' + id).once('value');
             const o = orderSnap.val();
             if(!o) return;
-
             const stockSnap = await db.ref('stock').once('value');
             const s = stockSnap.val();
             let updates = {};
             for(let item in o.rawItems) { updates[`/stock/${item}`] = (s[item] || 0) + o.rawItems[item]; }
             await db.ref().update(updates);
-            
             await db.ref('orders/' + id).update({ status: 'cancelled' });
             setTimeout(() => { db.ref('orders/' + id).remove(); }, 10000);
         }
@@ -104,7 +102,7 @@
         function resetBank() { 
             if(confirm("Clear banked revenue AND reset Top Seller stats?")) {
                 db.ref('lifetime_revenue').set(0); 
-                db.ref('sales_counts').remove(); // RESETS THE BADGE LOGIC
+                db.ref('sales_counts').remove(); 
             }
         }
 
