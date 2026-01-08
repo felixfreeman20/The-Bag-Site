@@ -136,20 +136,17 @@
         firebase.initializeApp(firebaseConfig); const db = firebase.database();
         
         let cart = {}, stock = {}, isFlash = false, method = "Pickup", bestSellerId = "";
-        let flashInterval = null; // Fix for glitching timer
+        let flashInterval = null;
 
-        // LISTEN FOR SHOP STATUS
         db.ref('settings/storeOpen').on('value', snap => {
             const isOpen = snap.val();
             document.getElementById('closed-screen').classList.toggle('hidden', isOpen);
         });
 
-        // BEST SELLER LOGIC (Last 4 Hours)
         db.ref('orders').on('value', snap => {
             const orders = snap.val() || {};
             const counts = {};
             const fourHoursAgo = Date.now() - (4 * 60 * 60 * 1000);
-            
             Object.values(orders).forEach(o => {
                 if(o.timestamp > fourHoursAgo && o.items_list) {
                     o.items_list.forEach(id => { counts[id] = (counts[id] || 0) + 1; });
@@ -175,7 +172,6 @@
         };
 
         const pop = document.getElementById('pop-sfx');
-        document.addEventListener('click', () => { pop.play().then(() => { pop.pause(); pop.currentTime = 0; }); }, { once: true });
         function playPop() { pop.currentTime = 0; pop.play().catch(()=>{}); }
         function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
         function toggleDarkMode() { document.body.classList.toggle('dark-mode'); }
@@ -183,33 +179,28 @@
         db.ref('settings/flashSale').on('value', snap => {
             const data = snap.val() || {}; 
             isFlash = data.active && data.end > Date.now();
-            
-            // Fix: Always clear previous interval when database settings change
             if(flashInterval) clearInterval(flashInterval);
-
             document.body.classList.toggle('flash-active', isFlash);
             document.getElementById('flash-timer-box').classList.toggle('hidden', !isFlash);
             document.getElementById('total-sale-tag').classList.toggle('hidden', !isFlash);
-            
             if(isFlash) { 
                 const updateTimer = () => {
                     const diff = data.end - Date.now();
-                    if(diff <= 0) {
-                        clearInterval(flashInterval);
-                        document.getElementById('flash-timer-box').classList.add('hidden');
-                        return;
-                    }
+                    if(diff <= 0) { clearInterval(flashInterval); document.getElementById('flash-timer-box').classList.add('hidden'); return; }
                     const m = Math.floor(diff/60000), s = Math.floor((diff%60000)/1000);
                     document.getElementById('timer-display').innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
                 };
-                updateTimer(); // Run once immediately
-                flashInterval = setInterval(updateTimer, 1000); 
+                updateTimer(); flashInterval = setInterval(updateTimer, 1000); 
             }
-            renderInventory();
-            updateCartDisplay();
+            renderInventory(); updateCartDisplay();
         });
 
-        db.ref('stock').on('value', snap => { stock = snap.val() || {}; renderInventory(); });
+        // FORCE RENDER ON STOCK UPDATE
+        db.ref('stock').on('value', snap => { 
+            stock = snap.val() || {}; 
+            renderInventory(); 
+            updateCartDisplay(); 
+        });
 
         function renderInventory() {
             const container = document.getElementById('inventory'); container.innerHTML = "";
@@ -221,14 +212,11 @@
                     <img src="${itemsData[id].img}" class="snack-img">
                     <div class="flex-1">
                         <div class="flex gap-2 mb-1">
-                            ${s <= 2 && s > 0 ? '<span class="bg-red-500 text-white text-[8px] px-2 py-0.5 rounded-full font-black animate-bounce">BUY NOW (Only '+s+')</span>' : ''}
+                            ${s <= 2 && s > 0 ? '<span class="bg-red-500 text-white text-[8px] px-2 py-0.5 rounded-full font-black animate-bounce">Only '+s+' left</span>' : ''}
                             ${id === bestSellerId ? '<span class="bg-blue-600 text-white text-[8px] px-2 py-0.5 rounded-full font-black uppercase">Popular</span>' : ''}
                         </div>
                         <h3 class="font-black text-sm uppercase italic">${itemsData[id].name}</h3>
-                        <div class="flex items-center gap-2">
-                           <p class="font-black text-lg" style="color:var(--accent)">${p}฿</p>
-                           ${isFlash ? '<span class="text-[9px] bg-red-600 text-white px-1.5 py-0.5 rounded-md font-black italic">-10%</span>' : ''}
-                        </div>
+                        <div class="flex items-center gap-2"><p class="font-black text-lg" style="color:var(--accent)">${p}฿</p></div>
                         <p class="text-[10px] font-black opacity-40 uppercase tracking-tighter">Stock: ${s}</p>
                     </div>
                     <div class="flex items-center gap-3 bg-slate-500/10 p-2 rounded-2xl">
@@ -241,7 +229,7 @@
         }
 
         function updateQty(id, amt) {
-            cart[id] = Math.max(0, Math.min(stock[id], (cart[id] || 0) + amt));
+            cart[id] = Math.max(0, Math.min(stock[id] || 0, (cart[id] || 0) + amt));
             updateCartDisplay(); renderInventory();
         }
 
@@ -264,31 +252,25 @@
             const n = document.getElementById('cust-name').value;
             const itemsInCart = Object.keys(cart).filter(k=>cart[k]>0);
             if(!n || itemsInCart.length === 0) return alert("Add items and name!");
-            
             const snap = await db.ref('orders').once('value');
             const active = Object.values(snap.val() || {}).filter(o => o.status === 'active').length;
             const wait = (active * 3) + 5;
-
-            // DEDUCT STOCK & SAVE ORDER
             const itemsListForBestSeller = [];
             itemsInCart.forEach(id => {
                 const qty = cart[id];
                 for(let i=0; i<qty; i++) itemsListForBestSeller.push(id);
                 db.ref('stock/'+id).transaction(current => (current || 0) - qty);
             });
-
             const ref = await db.ref('orders').push({ 
                 name: n, grade: document.getElementById('cust-grade').value, 
                 items: itemsInCart.map(k=>`${itemsData[k].name} x${cart[k]}`).join(', '),
                 items_list: itemsListForBestSeller,
                 status: 'active', timestamp: Date.now(), location: method
             });
-
             document.getElementById('order-flow').classList.add('hidden');
             document.getElementById('bottom-bar').classList.add('hidden'); 
             document.getElementById('receipt').classList.remove('hidden');
             document.getElementById('wait-time').innerText = wait + " mins";
-            
             confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
             db.ref('orders/'+ref.key).on('value', s => { if(s.val()?.status === 'cancelled') document.getElementById('full-cancel-screen').classList.remove('hidden'); });
         }
