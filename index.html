@@ -22,14 +22,10 @@
         #about-sidebar.open { transform: translateX(0); }
         .snack-img { width: 100px; height: 120px; object-fit: cover; border-radius: 1.5rem; background: #f1f5f9; }
         .dark-mode .snack-img { background: #1e293b; }
-        
-        /* DYNAMIC TOTAL BACKGROUND */
         .total-box { background-color: var(--total-bg); color: var(--total-text); transition: all 0.3s ease; }
 
-        /* FLASH SALE DRAMA */
         @keyframes float-emoji { 0% { transform: translateY(100vh) rotate(0); opacity:0; } 50% { opacity:1; } 100% { transform: translateY(-20vh) rotate(20deg); opacity:0; } }
         .decor { position: fixed; font-size: 3rem; pointer-events: none; z-index: 0; animation: float-emoji 5s linear infinite; bottom: -10%; }
-        
         .method-btn { transition: all 0.2s; color: #94a3b8; font-weight: 800; }
         .method-btn.active { background: #3b82f6 !important; color: white !important; }
     </style>
@@ -38,13 +34,10 @@
 
     <div id="flash-decorations" class="hidden">
         <div class="decor" style="left:5%; animation-delay:0s">⚡</div>
-        <div class="decor" style="left:12%; animation-delay:2s">🔥</div>
-        <div class="decor" style="right:5%; animation-delay:1s">⚡</div>
-        <div class="decor" style="right:12%; animation-delay:3s">🔥</div>
+        <div class="decor" style="right:5%; animation-delay:1s">🔥</div>
     </div>
 
     <audio id="pop-sound" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3" preload="auto"></audio>
-    <audio id="flash-start-sound" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3" preload="auto"></audio>
 
     <div id="closed-screen" class="fixed inset-0 z-[1001] hidden flex items-center justify-center p-6 bg-white text-blue-600 text-center">
         <div>
@@ -93,7 +86,7 @@
         <div id="order-flow">
             <div id="flash-banner" class="hidden bg-red-600 text-white p-8 rounded-[2.5rem] mb-8 flex justify-between items-center shadow-2xl border-4 border-white animate-pulse">
                 <div><h2 class="text-3xl font-black italic uppercase">10% OFF!</h2><p class="text-xs font-bold opacity-80 uppercase">Flash Sale Live</p></div>
-                <div class="text-right bg-black/20 p-4 rounded-3xl"><p id="flash-timer" class="text-2xl font-black font-mono">00:00</p></div>
+                <div class="text-right bg-white/20 p-4 rounded-3xl"><p id="flash-timer" class="text-2xl font-black font-mono">00:00</p></div>
             </div>
 
             <section class="bg-card p-8 rounded-[2.5rem] shadow-sm border mb-8">
@@ -127,13 +120,18 @@
     </div>
 
     <div id="rules-modal" class="fixed inset-0 bg-slate-900/70 hidden z-[900] flex items-center justify-center p-6 backdrop-blur-md">
-        <div class="bg-white p-10 rounded-[3.5rem] max-w-sm w-full text-center">
+        <div class="bg-white p-10 rounded-[3.5rem] max-w-sm w-full text-center relative">
+            <button onclick="document.getElementById('rules-modal').classList.add('hidden')" class="absolute top-8 right-8 text-slate-300 font-bold">✕</button>
             <h2 class="text-3xl font-black mb-6 italic text-blue-600 uppercase">The Rules</h2>
-            <div class="text-slate-500 font-bold mb-8 italic space-y-3 text-sm">
+            <div class="text-slate-500 font-bold mb-8 italic space-y-3 text-sm text-left">
                 <p>• Cash ready on arrival</p>
                 <p>• No delivery during class</p>
+                <div class="pt-4 border-t border-slate-100">
+                    <p class="text-blue-600 text-[10px] uppercase font-black">Promo Code</p>
+                    <input type="text" placeholder="Optional" class="w-full mt-2 bg-slate-100 p-3 rounded-xl text-xs outline-none">
+                </div>
             </div>
-            <button onclick="submitOrder(); playPop()" class="w-full blue-gradient text-white py-6 rounded-2xl font-black uppercase">Accept & Buy</button>
+            <button onclick="submitOrder(); playPop()" class="w-full blue-gradient text-white py-6 rounded-2xl font-black uppercase shadow-lg">Accept & Buy</button>
         </div>
     </div>
 
@@ -173,20 +171,12 @@
 
         db.ref('settings/flashSale').on('value', snap => {
             const data = snap.val() || { active: false, end: 0 };
-            isFlash = data.active && data.end > Date.now(); flashEnd = data.end;
-            if (isFlash) { document.getElementById('flash-start-sound').play().catch(()=>{}); document.getElementById('flash-decorations').classList.remove('hidden'); } 
+            isFlash = data.active && data.end > Date.now();
+            if (isFlash) { document.getElementById('flash-decorations').classList.remove('hidden'); } 
             else { document.getElementById('flash-decorations').classList.add('hidden'); }
             document.getElementById('flash-banner').classList.toggle('hidden', !isFlash);
             renderInventory(); updateCartDisplay();
         });
-
-        setInterval(() => {
-            if(!isFlash) return;
-            const rem = flashEnd - Date.now();
-            if(rem <= 0) { isFlash = false; document.getElementById('flash-banner').classList.add('hidden'); return; }
-            const m = Math.floor(rem/60000); const s = Math.floor((rem%60000)/1000);
-            document.getElementById('flash-timer').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
-        }, 1000);
 
         db.ref('stock').on('value', snap => { stock = snap.val() || {}; renderInventory(); });
 
@@ -202,10 +192,7 @@
                     <div class="flex-1">
                         <h3 class="font-black text-sm uppercase italic">${item.name}</h3>
                         <div class="flex items-center justify-between mt-4">
-                            <div>
-                                <span class="text-blue-600 font-black block">${isFlash ? `<span class="old-price opacity-40 text-xs mr-1">${item.price}฿</span>` : ''}${price}฿</span>
-                                <span class="text-[9px] font-black uppercase text-slate-400">Stock: ${s}</span>
-                            </div>
+                            <div><span class="text-blue-600 font-black block">${price}฿</span><span class="text-[9px] font-black uppercase text-slate-400">Stock: ${s}</span></div>
                             <div class="flex items-center gap-3 bg-slate-500/10 p-1 rounded-xl">
                                 <button onclick="updateQty('${id}', -1); playPop()" class="w-8 h-8 font-black">-</button>
                                 <span class="font-black text-blue-600">${cart[id] || 0}</span>
@@ -233,7 +220,7 @@
 
         async function submitOrder() {
             const itemsArr = []; for(let id in cart) if(cart[id] > 0) itemsArr.push(`${itemsData[id].name} x${cart[id]}`);
-            if(!document.getElementById('cust-name').value || itemsArr.length === 0) return alert("Details missing!");
+            if(!document.getElementById('cust-name').value || itemsArr.length === 0) return alert("Missing details!");
             const ref = await db.ref('orders').push({ name: document.getElementById('cust-name').value, grade: document.getElementById('cust-grade').value, items: itemsArr.join(', '), status: 'pending', timestamp: Date.now(), total: updateCartDisplay() });
             document.getElementById('rules-modal').classList.add('hidden');
             document.getElementById('pending-screen').classList.remove('hidden');
