@@ -54,11 +54,10 @@
             <h2 class="text-3xl font-black text-blue-600 italic uppercase mb-4">The Story.</h2>
             <p class="text-slate-600 leading-relaxed mb-8 text-sm font-medium">Alon and Sean founded The Bag to bring premium snacks directly to your classroom.</p>
             
-            <div class="bg-blue-600 p-6 rounded-[2rem] text-white shadow-lg mb-8">
-                <p class="text-[10px] font-black uppercase mb-2 opacity-80">Active Rewards</p>
-                <div id="promo-display" class="space-y-2 font-bold text-sm italic">
-                    <p>• WELCOME10 (-10฿)</p>
-                </div>
+            <div class="bg-gradient-to-br from-yellow-400 to-orange-500 p-6 rounded-[2rem] text-white shadow-lg mb-8">
+                <p class="text-[10px] font-black uppercase mb-1 opacity-90">Rewards System</p>
+                <h4 class="text-xl font-black italic uppercase">Promo Codes</h4>
+                <p class="text-[10px] font-bold mt-2 bg-black/10 inline-block px-2 py-1 rounded-lg uppercase tracking-widest">Coming Soon</p>
             </div>
 
             <div class="space-y-4 mb-10">
@@ -80,7 +79,7 @@
     <main class="max-w-2xl mx-auto p-6 relative z-10">
         <div id="order-flow">
             <div id="flash-banner" class="hidden bg-red-600 text-white p-8 rounded-[2.5rem] mb-8 flex justify-between items-center shadow-xl border-4 border-white">
-                <div><h2 class="text-3xl font-black italic uppercase">10% OFF!</h2><p class="text-xs font-bold opacity-80">Flash Sale Activated</p></div>
+                <div><h2 class="text-3xl font-black italic uppercase">10% OFF!</h2><p class="text-xs font-bold opacity-80 uppercase">Flash Sale Activated</p></div>
                 <div class="text-right bg-white/20 p-4 rounded-3xl"><p id="flash-timer" class="text-2xl font-black font-mono">00:00</p></div>
             </div>
 
@@ -147,7 +146,7 @@
             </ul>
             <div class="mb-8">
                 <input type="text" id="promo-input" placeholder="Promo Code?" class="w-full bg-slate-100 p-4 rounded-xl border-2 border-dashed border-slate-300 outline-none font-black text-center text-blue-600 uppercase">
-                <p id="promo-msg" class="text-[10px] font-bold mt-2 text-green-600 hidden">CODE APPLIED!</p>
+                <p id="promo-msg" class="text-[10px] font-bold mt-2 text-green-600 hidden uppercase">Applied!</p>
             </div>
             <button onclick="submitOrder()" class="w-full blue-gradient text-white py-6 rounded-2xl font-black uppercase shadow-lg">Accept & Buy</button>
         </div>
@@ -261,7 +260,6 @@
             let total = deliveryFee;
             for (let id in cart) total += (cart[id] * (isFlash ? Math.floor(itemsData[id].price * 0.9) : itemsData[id].price));
             
-            // Apply Promo Discount
             const promo = document.getElementById('promo-input').value.toUpperCase();
             if(promo === "WELCOME10") { discount = 10; document.getElementById('promo-msg').classList.remove('hidden'); }
             else { discount = 0; document.getElementById('promo-msg').classList.add('hidden'); }
@@ -277,7 +275,7 @@
         async function submitOrder() {
             const itemsArr = []; const cartMap = {};
             for(let id in cart) if(cart[id] > 0) { itemsArr.push(`${itemsData[id].name} x${cart[id]}`); cartMap[id] = cart[id]; }
-            if(!document.getElementById('cust-name').value || itemsArr.length === 0) { playError(); return alert("Enter name and select items!"); }
+            if(!document.getElementById('cust-name').value || itemsArr.length === 0) { playError(); return alert("Missing Info!"); }
 
             const finalTotal = updateCartDisplay();
             const orderData = { name: document.getElementById('cust-name').value, grade: document.getElementById('cust-grade').value, loc: (method === 'Pickup' ? "Falcons Nest" : document.getElementById('cust-loc').value), items: itemsArr.join(', '), rawItems: cartMap, total: finalTotal, status: 'active', timestamp: Date.now(), promo: discount > 0 ? "WELCOME10" : "None" };
@@ -298,7 +296,6 @@
             });
         }
 
-        // Auto-update total when typing promo
         document.getElementById('promo-input').addEventListener('input', updateCartDisplay);
     </script>
 </body>
