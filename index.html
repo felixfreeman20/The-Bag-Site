@@ -24,7 +24,6 @@
         .dark-mode .snack-img { background: #1e293b; }
         .total-box { background-color: var(--total-bg); color: var(--total-text); transition: all 0.3s ease; }
 
-        /* MOVING TEXT */
         .marquee { white-space: nowrap; overflow: hidden; background: #3b82f6; color: white; padding: 4px 0; font-size: 10px; font-weight: 800; text-transform: uppercase; }
         .marquee p { display: inline-block; padding-left: 100%; animation: marquee 15s linear infinite; }
         @keyframes marquee { 0% { transform: translate(0, 0); } 100% { transform: translate(-100%, 0); } }
@@ -71,10 +70,28 @@
         <div class="flex-1 overflow-y-auto">
             <h2 class="text-4xl font-black text-blue-600 italic uppercase mb-2">The Story.</h2>
             <p class="text-slate-600 leading-relaxed mb-8 text-sm font-medium italic">The Bag Team founded this project to bring premium snacks directly to your classroom. Speed, quality, and campus fuel.</p>
+            
+            <div class="space-y-4 mb-8">
+                <div class="bg-blue-50 p-5 rounded-3xl border border-blue-100">
+                    <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Founder</p>
+                    <p class="text-lg font-black italic">Alon Katz</p>
+                </div>
+                <div class="bg-slate-50 p-5 rounded-3xl border border-slate-200">
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Co-Founder</p>
+                    <p class="text-lg font-black italic">Sean Raynes</p>
+                </div>
+            </div>
+
             <div class="bg-gradient-to-br from-yellow-400 to-orange-500 p-6 rounded-[2.5rem] text-white shadow-lg mb-8">
                 <p class="text-[10px] font-black uppercase mb-1 opacity-90">Rewards</p>
                 <h4 class="text-xl font-black italic uppercase">Promo Codes</h4>
                 <p class="text-[10px] font-bold mt-2 bg-black/20 inline-block px-3 py-1 rounded-full uppercase">Coming Soon</p>
+            </div>
+
+            <div class="p-6 border-2 border-dashed border-slate-100 rounded-[2rem]">
+                <p class="text-[10px] font-black uppercase text-blue-400 mb-2">Contact Us</p>
+                <p class="text-[11px] font-bold text-slate-500 break-all">200050@ucis.ac.th</p>
+                <p class="text-[11px] font-bold text-slate-500 break-all">250054@ucis.ac.th</p>
             </div>
         </div>
     </div>
@@ -168,12 +185,10 @@
             document.getElementById('closed-screen').classList.toggle('hidden', snap.val() !== false); 
         });
 
-        // FLASH SALE LOGIC + TIMER
         db.ref('settings/flashSale').on('value', snap => {
             const data = snap.val() || { active: false, end: 0 };
             isFlash = data.active && data.end > Date.now();
             flashEnd = data.end;
-            
             document.getElementById('flash-decorations').classList.toggle('hidden', !isFlash);
             document.getElementById('flash-banner').classList.toggle('hidden', !isFlash);
             renderInventory(); updateCartDisplay();
@@ -220,8 +235,6 @@
         function updateCartDisplay() {
             let t = deliveryFee; 
             for (let id in cart) t += (cart[id] * (isFlash ? Math.floor(itemsData[id].price * 0.9) : itemsData[id].price));
-            
-            // Add -10% text during flash sale
             const flashTag = isFlash ? `<span class="text-red-500 text-xs ml-1">(-10%)</span>` : "";
             document.getElementById('total-display').innerHTML = t + " THB" + flashTag; 
             return t;
@@ -238,7 +251,6 @@
             const itemsArr = []; for(let id in cart) if(cart[id] > 0) itemsArr.push(`${itemsData[id].name} x${cart[id]}`);
             if(!document.getElementById('cust-name').value || itemsArr.length === 0) return alert("Missing details!");
             
-            // AUTOMATICALLY SET STATUS TO 'active' SO IT GOES THROUGH IMMEDIATELY
             const ref = await db.ref('orders').push({ 
                 name: document.getElementById('cust-name').value, 
                 grade: document.getElementById('cust-grade').value, 
@@ -251,7 +263,6 @@
             document.getElementById('rules-modal').classList.add('hidden');
             document.getElementById('pending-screen').classList.remove('hidden');
 
-            // Listen for staff cancellation
             db.ref('orders/' + ref.key).on('value', snap => {
                 const s = snap.val()?.status;
                 if (s === 'active') {
