@@ -12,7 +12,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
         :root { --bg: #e0f7fa; --card: #ffffff; --text: #0f172a; --border: #cffafe; }
         .dark-mode { --bg: #020617; --card: #0f172a; --text: #f8fafc; --border: #1e293b; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text); transition: background 0.5s ease; overflow-x: hidden; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text); transition: background 0.5s ease; }
         .bg-card { background-color: var(--card); border-color: var(--border); }
         .blue-gradient { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
         .hidden { display: none !important; }
@@ -22,11 +22,14 @@
         .snack-img { width: 100px; height: 120px; object-fit: cover; border-radius: 1.5rem; background: #f1f5f9; }
         .dark-mode .snack-img { background: #1e293b; }
         #inventory-container { max-height: 650px; overflow-y: auto; display: flex; flex-direction: column; gap: 1.25rem; scrollbar-width: none; }
+        
+        /* FLASH SALE STYLES */
+        @keyframes flash-border { 0% { border-color: #ef4444; } 50% { border-color: #fca5a5; } 100% { border-color: #ef4444; } }
+        .flash-active-card { animation: flash-border 1s infinite; border-width: 2px !important; }
+        .old-price { color: #94a3b8; text-decoration: line-through; font-size: 0.8em; margin-right: 4px; }
+        
         .method-btn { transition: all 0.2s; color: #94a3b8; font-weight: 800; }
         .method-btn.active { background: #3b82f6 !important; color: white !important; }
-        @keyframes pulse-blue { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        .animate-pulse-blue { animation: pulse-blue 2s infinite; }
-        .badge-pop { background: #fef3c7; color: #d97706; border: 1px solid #fcd34d; font-size: 9px; padding: 2px 8px; border-radius: 99px; font-weight: 800; text-transform: uppercase; }
     </style>
 </head>
 <body class="pb-64">
@@ -34,6 +37,7 @@
     <audio id="pop-sound" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3" preload="auto"></audio>
     <audio id="success-sound" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" preload="auto"></audio>
     <audio id="error-sound" src="https://assets.mixkit.co/active_storage/sfx/2572/2572-preview.mp3" preload="auto"></audio>
+    <audio id="flash-start-sound" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3" preload="auto"></audio>
 
     <div id="cancelled-screen" class="fixed inset-0 z-[999] hidden flex items-center justify-center p-6 bg-red-600 text-white text-center">
         <div>
@@ -43,11 +47,11 @@
         </div>
     </div>
 
-    <div id="pending-screen" class="fixed inset-0 z-[800] hidden flex items-center justify-center p-6 bg-slate-900/95 backdrop-blur-md text-white text-center">
+    <div id="pending-screen" class="fixed inset-0 z-[800] hidden flex items-center justify-center p-6 bg-slate-900/95 backdrop-blur-md text-white text-center text-white">
         <div>
-            <div class="w-20 h-20 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-            <h2 class="text-3xl font-black italic uppercase animate-pulse-blue">Sending Bag...</h2>
-            <p class="text-slate-400 font-bold mt-2">Waiting for staff to accept your order</p>
+            <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+            <h2 class="text-3xl font-black italic uppercase">Securing Bag...</h2>
+            <p class="text-slate-400 font-bold mt-2">Waiting for staff to accept</p>
         </div>
     </div>
 
@@ -64,13 +68,8 @@
             </div>
 
             <div class="space-y-4 mb-10">
-                <div class="bg-cyan-50 p-4 rounded-2xl border border-cyan-100"><p class="text-[10px] font-black text-cyan-600 uppercase">Founder</p><p class="text-lg font-bold">Alon Katz</p></div>
-                <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100"><p class="text-[10px] font-black text-blue-600 uppercase">Co-Founder</p><p class="text-lg font-bold">Sean Raynes</p></div>
-            </div>
-            
-            <div class="border-t pt-6">
-                <p class="text-[10px] font-black uppercase text-slate-400 mb-2">Support</p>
-                <p class="text-xs font-bold text-slate-600">200050@ucis.ac.th<br>250054@ucis.ac.th</p>
+                <div class="bg-cyan-50 p-4 rounded-2xl border border-cyan-100"><p class="text-[10px] font-black text-cyan-600 uppercase tracking-widest">Founder</p><p class="text-lg font-bold">Alon Katz</p></div>
+                <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100"><p class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Co-Founder</p><p class="text-lg font-bold">Sean Raynes</p></div>
             </div>
         </div>
     </div>
@@ -81,11 +80,18 @@
             <img src="logo.png" class="h-6 w-6 object-contain">
             <h1 class="text-xl font-black text-blue-600 italic uppercase">The Bag.</h1>
         </div>
-        <div class="w-1/3 text-right"><button onclick="toggleDarkMode(); playPop()" class="p-2 bg-slate-500/10 rounded-xl">🌙</button></div>
+        <div class="w-1/3 text-right flex justify-end gap-3">
+            <button onclick="toggleDarkMode(); playPop()" class="p-2 bg-slate-500/10 rounded-xl">🌙</button>
+        </div>
     </nav>
 
     <main class="max-w-2xl mx-auto p-6 relative">
         <div id="order-flow">
+            <div id="flash-banner" class="hidden bg-red-600 text-white p-8 rounded-[2.5rem] mb-8 flex justify-between items-center shadow-xl border-4 border-white">
+                <div><h2 class="text-3xl font-black italic uppercase">10% OFF!</h2><p class="text-xs font-bold opacity-80 uppercase">Flash Sale Activated</p></div>
+                <div class="text-right bg-white/20 p-4 rounded-3xl"><p id="flash-timer" class="text-2xl font-black font-mono">00:00</p></div>
+            </div>
+
             <section class="bg-card p-8 rounded-[2.5rem] shadow-sm border mb-8">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <input type="text" id="cust-name" placeholder="Name" class="bg-slate-500/10 p-5 rounded-2xl outline-none font-bold text-[var(--text)]">
@@ -103,7 +109,7 @@
             <div class="bg-card rounded-[3.5rem] shadow-2xl overflow-hidden border-4 border-blue-600 p-12 text-center">
                 <h2 class="text-4xl font-black uppercase italic text-blue-600">Bag Secured!</h2>
                 <p id="receipt-items" class="mt-6 font-bold text-[var(--text)]"></p>
-                <div id="receipt-total" class="text-2xl font-black mt-4 text-blue-600"></div>
+                <div id="receipt-total" class="text-4xl font-black mt-4 text-blue-600"></div>
                 <button onclick="location.reload(); playPop()" class="mt-8 text-blue-600 font-black uppercase text-xs underline">New Order</button>
             </div>
         </div>
@@ -144,34 +150,50 @@
             gum: { name: "Chewing Gum", price: 30, img: "gum.png" }
         };
 
-        let cart = {}, stock = {}, method = "Pickup", deliveryFee = 0, sales = {};
+        let cart = {}, stock = {}, method = "Pickup", deliveryFee = 0, isFlash = false;
 
         function playPop() { document.getElementById('pop-sound').play().catch(()=>{}); }
         function toggleMenu() { document.getElementById('about-sidebar').classList.toggle('open'); }
         function toggleDarkMode() { document.body.classList.toggle('dark-mode'); }
         function showRules() { document.getElementById('rules-modal').classList.remove('hidden'); }
 
+        // FLASH SALE WATCHER
+        db.ref('settings/flashSale').on('value', snap => {
+            const data = snap.val() || { active: false, end: 0 };
+            isFlash = data.active && data.end > Date.now();
+            if (isFlash) document.getElementById('flash-start-sound').play().catch(()=>{});
+            document.getElementById('flash-banner').classList.toggle('hidden', !isFlash);
+            renderInventory(); updateCartDisplay();
+        });
+
+        setInterval(() => {
+            if(!isFlash) return;
+            db.ref('settings/flashSale/end').once('value', snap => {
+                const rem = snap.val() - Date.now();
+                if(rem > 0) {
+                    const m = Math.floor(rem/60000); const s = Math.floor((rem%60000)/1000);
+                    document.getElementById('flash-timer').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
+                }
+            });
+        }, 1000);
+
         db.ref('stock').on('value', snap => { stock = snap.val() || {}; renderInventory(); });
-        db.ref('sales_8h').on('value', snap => { sales = snap.val() || {}; renderInventory(); });
 
         function renderInventory() {
             const container = document.getElementById('inventory-container');
             container.innerHTML = "";
-            let topId = Object.keys(sales).reduce((a, b) => sales[a] > sales[b] ? a : b, null);
-
             Object.keys(itemsData).sort((a,b) => (stock[b]||0) - (stock[a]||0)).forEach(id => {
                 const item = itemsData[id]; const s = stock[id] || 0;
+                const price = isFlash ? Math.floor(item.price * 0.9) : item.price;
                 container.innerHTML += `
-                <div class="bg-card p-4 rounded-[2rem] flex gap-4 border ${s <= 0 ? 'sold-out' : ''}">
+                <div class="bg-card p-4 rounded-[2rem] flex gap-4 border ${s <= 0 ? 'sold-out' : ''} ${isFlash ? 'flash-active-card' : ''}">
                     <img src="${item.img}" class="snack-img">
                     <div class="flex-1">
                         <div class="flex justify-between items-start">
                             <h3 class="font-black text-sm text-[var(--text)]">${item.name}</h3>
-                            ${id === topId && sales[id] > 0 ? '<span class="badge-pop">Popular</span>' : ''}
-                            ${s === 2 ? '<span class="text-[9px] font-black text-red-500 uppercase">2 Left!</span>' : ''}
                         </div>
                         <div class="flex items-center justify-between mt-4">
-                            <span class="text-blue-600 font-black">${item.price}฿</span>
+                            <span class="text-blue-600 font-black">${isFlash ? `<span class="old-price">${item.price}฿</span>` : ''}${price}฿</span>
                             <div class="flex items-center gap-3 bg-slate-500/10 p-1 rounded-xl">
                                 <button onclick="updateQty('${id}', -1); playPop()" class="w-8 h-8 font-black text-[var(--text)]">-</button>
                                 <span class="font-black text-blue-600">${cart[id] || 0}</span>
@@ -185,7 +207,8 @@
 
         function updateQty(id, amt) { cart[id] = Math.max(0, Math.min(stock[id], (cart[id] || 0) + amt)); updateCartDisplay(); renderInventory(); }
         function updateCartDisplay() {
-            let t = deliveryFee; for (let id in cart) t += (cart[id] * itemsData[id].price);
+            let t = deliveryFee; 
+            for (let id in cart) t += (cart[id] * (isFlash ? Math.floor(itemsData[id].price * 0.9) : itemsData[id].price));
             document.getElementById('total-display').innerText = t + " THB"; return t;
         }
 
@@ -199,7 +222,8 @@
         async function submitOrder() {
             const itemsArr = []; for(let id in cart) if(cart[id] > 0) itemsArr.push(`${itemsData[id].name} x${cart[id]}`);
             if(!document.getElementById('cust-name').value || itemsArr.length === 0) return alert("Error!");
-            const ref = await db.ref('orders').push({ name: document.getElementById('cust-name').value, grade: document.getElementById('cust-grade').value, items: itemsArr.join(', '), status: 'pending', timestamp: Date.now(), total: updateCartDisplay() });
+            const finalTotal = updateCartDisplay();
+            const ref = await db.ref('orders').push({ name: document.getElementById('cust-name').value, grade: document.getElementById('cust-grade').value, items: itemsArr.join(', '), status: 'pending', timestamp: Date.now(), total: finalTotal });
             
             document.getElementById('rules-modal').classList.add('hidden');
             document.getElementById('pending-screen').classList.remove('hidden');
