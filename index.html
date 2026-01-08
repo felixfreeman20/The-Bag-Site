@@ -12,7 +12,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
         :root { --bg: #e0f7fa; --card: #ffffff; --text: #0f172a; --border: #cffafe; }
         .dark-mode { --bg: #020617; --card: #0f172a; --text: #f8fafc; --border: #1e293b; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text); transition: background 0.5s ease; text-align: left; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text); transition: background 0.5s ease; text-align: left; overflow-x: hidden; }
         .bg-card { background-color: var(--card); border-color: var(--border); }
         .blue-gradient { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
         .hidden { display: none !important; }
@@ -21,22 +21,20 @@
         #about-sidebar { transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); transform: translateX(-100%); z-index: 1000; }
         #about-sidebar.open { transform: translateX(0); }
         
-        #inventory-container { max-height: 600px; overflow-y: auto; padding-right: 8px; display: flex; flex-direction: column; gap: 1.25rem; }
-        
-        /* IMAGE STYLING */
+        /* IMAGE STYLING FOR RECTANGLES */
         .snack-img { width: 100px; height: 120px; object-fit: cover; border-radius: 1.5rem; background: #f1f5f9; }
         .dark-mode .snack-img { background: #1e293b; }
 
-        .badge-fire { background: #fef3c7; color: #d97706; border: 1px solid #fcd34d; font-size: 9px; padding: 2px 8px; border-radius: 99px; font-weight: 800; text-transform: uppercase; animation: pulse 2s infinite; }
-        .category-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
-
-        /* FLASH SALE DECOR */
+        #inventory-container { max-height: 650px; overflow-y: auto; padding-right: 8px; display: flex; flex-direction: column; gap: 1.25rem; scrollbar-width: none; }
+        
         @keyframes flash-border { 0% { border-color: #ef4444; } 50% { border-color: #fca5a5; } 100% { border-color: #ef4444; } }
-        .flash-active-card { animation: flash-border 1s infinite; border-width: 2px; }
+        .flash-active-card { animation: flash-border 1s infinite; border-width: 2px !important; }
         .old-price { color: #94a3b8; text-decoration: line-through; font-size: 0.8em; margin-right: 4px; }
+        .badge-fire { background: #fef3c7; color: #d97706; border: 1px solid #fcd34d; font-size: 9px; padding: 2px 8px; border-radius: 99px; font-weight: 800; text-transform: uppercase; }
+        .category-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
     </style>
 </head>
-<body class="pb-64 overflow-x-hidden">
+<body class="pb-64">
 
     <audio id="success-sound" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" preload="auto"></audio>
     <audio id="btn-click-sound" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3" preload="auto"></audio>
@@ -56,54 +54,32 @@
     </div>
 
     <div id="about-sidebar" class="fixed top-0 left-0 h-full w-80 bg-white shadow-2xl p-8 flex flex-col text-slate-900">
-        <button onclick="toggleMenu()" class="text-slate-400 text-sm font-black uppercase mb-8">✕ Close</button>
+        <button onclick="toggleMenu()" class="text-slate-400 text-sm font-black uppercase mb-8 text-left">✕ Close</button>
         <div class="flex-1 overflow-y-auto">
-            <img src="brand_hero.png" alt="The Bag" class="w-full h-48 object-cover rounded-[2rem] mb-6 shadow-lg">
             <h2 class="text-3xl font-black text-blue-600 italic uppercase mb-4">The Story.</h2>
             <p class="text-slate-600 leading-relaxed mb-8 text-sm font-medium">Alon and Sean founded The Bag to bring premium snacks directly to your classroom.</p>
             <div class="space-y-4 mb-10">
-                <div class="bg-cyan-50 p-4 rounded-2xl border border-cyan-100">
-                    <p class="text-[10px] font-black text-cyan-600 uppercase tracking-widest">Founder</p>
-                    <p class="text-lg font-bold">Alon Katz</p>
-                </div>
-                <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100">
-                    <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Co-Founder</p>
-                    <p class="text-lg font-bold">Sean Raynes</p>
-                </div>
-            </div>
-            <div class="bg-gradient-to-br from-yellow-400 to-orange-500 p-6 rounded-[2rem] text-white shadow-lg">
-                <h4 class="text-xl font-black italic uppercase">Rewards coming soon</h4>
+                <div class="bg-cyan-50 p-4 rounded-2xl border border-cyan-100"><p class="text-[10px] font-black text-cyan-600 uppercase tracking-widest">Founder</p><p class="text-lg font-bold">Alon Katz</p></div>
+                <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100"><p class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Co-Founder</p><p class="text-lg font-bold">Sean Raynes</p></div>
             </div>
         </div>
     </div>
 
     <nav class="bg-card backdrop-blur-md p-4 border-b sticky top-0 z-50 flex items-center px-6">
-        <div class="w-1/3"><button onclick="toggleMenu()" class="p-2 inline-flex flex-col gap-1.5"><div class="w-6 h-0.5 bg-blue-600 rounded-full"></div><div class="w-6 h-0.5 bg-blue-600 rounded-full"></div></button></div>
-        <div class="w-1/3 text-center"><h1 class="text-xl font-black text-blue-600 italic uppercase tracking-tighter">The Bag.</h1></div>
+        <div class="w-1/3"><button onclick="toggleMenu()" class="p-2 flex flex-col gap-1.5"><div class="w-6 h-0.5 bg-blue-600"></div><div class="w-6 h-0.5 bg-blue-600"></div></button></div>
+        <div class="w-1/3 text-center"><h1 class="text-xl font-black text-blue-600 italic uppercase">The Bag.</h1></div>
         <div class="w-1/3 text-right flex items-center justify-end gap-3">
             <button onclick="toggleDarkMode()" class="p-2 bg-slate-500/10 rounded-xl" id="dark-toggle">🌙</button>
+            <img src="logo.png" class="h-8 w-8 object-contain">
         </div>
     </nav>
 
     <main class="max-w-2xl mx-auto p-6 relative z-10">
         <div id="order-flow">
             <div id="flash-banner" class="hidden bg-red-600 text-white p-8 rounded-[2.5rem] mb-8 flex justify-between items-center shadow-xl">
-                <div>
-                    <h2 class="text-3xl font-black italic uppercase">10% OFF!</h2>
-                    <p class="text-xs font-bold opacity-80">Flash Sale Activated</p>
-                </div>
-                <div class="text-right">
-                    <p class="text-[10px] font-black uppercase">Ends In</p>
-                    <p id="flash-timer" class="text-2xl font-black font-mono">00:00</p>
-                </div>
+                <div><h2 class="text-3xl font-black italic uppercase">10% OFF!</h2><p class="text-xs font-bold opacity-80">Flash Sale Activated</p></div>
+                <div class="text-right"><p id="flash-timer" class="text-2xl font-black font-mono">00:00</p></div>
             </div>
-
-            <div id="rush-hour-banner" class="hidden bg-orange-100 border border-orange-200 p-5 rounded-[2rem] mb-6 flex items-center gap-4 text-orange-700">
-                <span class="text-2xl animate-pulse">⚡</span>
-                <p class="font-black text-xs uppercase tracking-widest">Rush Hour: High Demand</p>
-            </div>
-
-            <div id="closed-message" class="hidden text-center py-32"><h2 class="text-4xl font-black text-blue-600 italic uppercase">Restocking...</h2></div>
 
             <div id="store-content" class="space-y-8">
                 <section class="bg-card p-8 rounded-[2.5rem] shadow-sm border">
@@ -121,11 +97,11 @@
                 <section class="space-y-6">
                     <div class="flex flex-col gap-4">
                         <input type="text" id="search-input" oninput="renderInventory()" placeholder="Search snacks..." class="bg-card p-5 rounded-[1.5rem] border outline-none font-medium">
-                        <div class="flex gap-2 overflow-x-auto pb-2">
-                            <button onclick="filterCat('All')" class="category-btn active px-6 py-3 rounded-xl text-[10px] font-black uppercase border whitespace-nowrap">All</button>
-                            <button onclick="filterCat('Spicy')" class="category-btn px-6 py-3 rounded-xl text-[10px] font-black uppercase border whitespace-nowrap">Spicy</button>
-                            <button onclick="filterCat('Chips')" class="category-btn px-6 py-3 rounded-xl text-[10px] font-black uppercase border whitespace-nowrap">Chips</button>
-                            <button onclick="filterCat('Sweet')" class="category-btn px-6 py-3 rounded-xl text-[10px] font-black uppercase border whitespace-nowrap">Sweet</button>
+                        <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                            <button onclick="filterCat('All')" class="category-btn active px-6 py-3 rounded-xl text-[10px] font-black border uppercase">All</button>
+                            <button onclick="filterCat('Spicy')" class="category-btn px-6 py-3 rounded-xl text-[10px] font-black border uppercase">Spicy</button>
+                            <button onclick="filterCat('Chips')" class="category-btn px-6 py-3 rounded-xl text-[10px] font-black border uppercase">Chips</button>
+                            <button onclick="filterCat('Sweet')" class="category-btn px-6 py-3 rounded-xl text-[10px] font-black border uppercase">Sweet</button>
                         </div>
                     </div>
                     <div id="inventory-container"></div>
@@ -141,8 +117,8 @@
                 </div>
                 <div class="p-10 space-y-8">
                     <div class="flex justify-between items-end border-b pb-8">
-                        <div><p class="text-[10px] font-black text-slate-400 uppercase">Wait Time</p><p class="text-5xl font-black text-blue-600" id="est-time">--</p></div>
-                        <div class="text-right"><p class="text-[10px] font-black text-slate-400 uppercase">Total</p><p class="text-5xl font-black" id="receipt-total">0฿</p></div>
+                        <div><p class="text-[10px] font-black text-slate-400">WAIT TIME</p><p class="text-5xl font-black text-blue-600" id="est-time">--</p></div>
+                        <div class="text-right"><p class="text-[10px] font-black text-slate-400">TOTAL</p><p class="text-5xl font-black" id="receipt-total">0฿</p></div>
                     </div>
                     <p class="font-bold text-lg" id="receipt-items"></p>
                     <div class="bg-blue-50 p-6 rounded-[2rem]"><p class="text-blue-600 font-black italic text-xl" id="receipt-location"></p></div>
@@ -154,14 +130,13 @@
 
     <div id="bottom-bar" class="fixed bottom-0 left-0 right-0 bg-card/90 backdrop-blur-xl p-8 border-t z-50">
         <div class="max-w-2xl mx-auto flex justify-between items-center">
-            <div><p class="text-[10px] font-black text-slate-400 uppercase">Price</p><p class="text-3xl font-black text-blue-600" id="total-display">0 THB</p></div>
+            <div><p class="text-3xl font-black text-blue-600" id="total-display">0 THB</p></div>
             <button onclick="showRules()" class="blue-gradient text-white px-12 py-5 rounded-[1.5rem] font-black uppercase text-xs shadow-xl">Secure Bag</button>
         </div>
     </div>
 
     <div id="rules-modal" class="fixed inset-0 bg-slate-900/70 hidden z-[500] flex items-center justify-center p-6 backdrop-blur-md">
         <div class="bg-white p-12 rounded-[3.5rem] max-w-sm w-full text-center relative border-b-8 border-blue-600">
-            <button onclick="playError(); document.getElementById('rules-modal').classList.add('hidden')" class="absolute top-8 right-10 font-black text-slate-300">✕</button>
             <h2 class="text-3xl font-black mb-6 italic text-blue-600">The Rules</h2>
             <ul class="text-left space-y-4 mb-10 text-sm font-semibold text-slate-500">
                 <li>• Cash must be ready for pickup.</li>
@@ -191,7 +166,7 @@
             gum: { name: "Chewing Gum", price: 30, cat: "Sweet", img: "gum.png" }
         };
 
-        let cart = {}, stock = {}, salesStats = {}, method = "Pickup", deliveryFee = 0, currentCat = "All", isFlash = false, currentOrderId = null;
+        let cart = {}, stock = {}, salesStats = {}, method = "Pickup", deliveryFee = 0, currentCat = "All", isFlash = false;
 
         function playClick() { document.getElementById('btn-click-sound').play().catch(()=>{}); }
         function playError() { document.getElementById('error-sound').play().catch(()=>{}); }
@@ -199,9 +174,8 @@
 
         db.ref('settings/flashSale').on('value', snap => {
             const data = snap.val() || { active: false, end: 0 };
-            const wasFlash = isFlash;
             isFlash = data.active && data.end > Date.now();
-            if (isFlash && !wasFlash) document.getElementById('flash-start-sound').play().catch(()=>{});
+            if (isFlash) document.getElementById('flash-start-sound').play().catch(()=>{});
             document.getElementById('flash-banner').classList.toggle('hidden', !isFlash);
             document.getElementById('flash-huge-text').classList.toggle('hidden', !isFlash);
             renderInventory(); updateCartDisplay();
@@ -210,7 +184,7 @@
         setInterval(() => {
             if(!isFlash) return;
             db.ref('settings/flashSale/end').once('value', snap => {
-                const end = snap.val() || 0; const rem = end - Date.now();
+                const rem = snap.val() - Date.now();
                 if(rem > 0) {
                     const m = Math.floor(rem/60000); const s = Math.floor((rem%60000)/1000);
                     document.getElementById('flash-timer').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
@@ -239,30 +213,25 @@
             const container = document.getElementById('inventory-container');
             const search = document.getElementById('search-input').value.toLowerCase();
             container.innerHTML = "";
-            
-            let topSellerId = null; let maxSold = 0;
-            for(let id in salesStats) { if(salesStats[id] > maxSold) { maxSold = salesStats[id]; topSellerId = id; } }
+            let topId = null; let max = 0;
+            for(let id in salesStats) if(salesStats[id] > max) { max = salesStats[id]; topId = id; }
 
             Object.keys(itemsData).forEach(id => {
-                const item = itemsData[id];
-                const s = stock[id] || 0;
+                const item = itemsData[id]; const s = stock[id] || 0;
                 if(currentCat !== "All" && item.cat !== currentCat) return;
                 if(search && !item.name.toLowerCase().includes(search)) return;
-
-                const finalPrice = isFlash ? Math.floor(item.price * 0.9) : item.price;
+                const price = isFlash ? Math.floor(item.price * 0.9) : item.price;
                 
                 container.innerHTML += `
-                <div class="bg-card p-4 rounded-[2rem] shadow-sm flex gap-4 border ${s <= 0 ? 'sold-out' : ''} ${isFlash ? 'flash-active-card' : ''}">
-                    <img src="${item.img}" class="snack-img shadow-inner">
+                <div class="bg-card p-4 rounded-[2rem] flex gap-4 border ${s <= 0 ? 'sold-out' : ''} ${isFlash ? 'flash-active-card' : ''}">
+                    <img src="${item.img}" class="snack-img">
                     <div class="flex-1 flex flex-col justify-between">
                         <div>
                             <div class="flex justify-between items-start">
-                                <h3 class="font-black text-sm tracking-tight">${item.name}</h3>
-                                ${topSellerId === id ? '<span class="badge-fire">🔥 Best</span>' : ''}
+                                <h3 class="font-black text-sm">${item.name}</h3>
+                                ${topId === id ? '<span class="badge-fire">🔥 Best</span>' : ''}
                             </div>
-                            <p class="text-blue-600 font-black mt-1">
-                                ${isFlash ? `<span class="old-price">${item.price}฿</span>` : ''}${finalPrice}฿
-                            </p>
+                            <p class="text-blue-600 font-black mt-1">${isFlash ? `<span class="old-price">${item.price}฿</span>` : ''}${price}฿</p>
                         </div>
                         <div class="flex items-center justify-between">
                             <span class="text-[9px] font-bold text-slate-400">STOCK: ${s}</span>
@@ -278,49 +247,33 @@
         }
 
         function updateQty(id, amt) { playClick(); cart[id] = Math.max(0, Math.min(stock[id], (cart[id] || 0) + amt)); updateCartDisplay(); renderInventory(); }
-
         function updateCartDisplay() {
             let total = deliveryFee;
-            for (let id in cart) { total += (cart[id] * (isFlash ? Math.floor(itemsData[id].price * 0.9) : itemsData[id].price)); }
+            for (let id in cart) total += (cart[id] * (isFlash ? Math.floor(itemsData[id].price * 0.9) : itemsData[id].price));
             document.getElementById('total-display').innerText = total + " THB";
             return total;
         }
-
-        function setMethod(m) {
-            playClick(); method = m; deliveryFee = (m === "Delivery" ? 15 : 0);
-            document.getElementById('loc-container').classList.toggle('hidden', m !== 'Delivery');
-            updateCartDisplay();
-        }
-
-        function showRules() {
-            if(!document.getElementById('cust-name').value || !Object.values(cart).some(q => q > 0)) { playError(); return alert("Enter name and select items!"); }
-            playClick(); document.getElementById('rules-modal').classList.remove('hidden');
-        }
+        function setMethod(m) { playClick(); method = m; deliveryFee = (m === "Delivery" ? 15 : 0); document.getElementById('loc-container').classList.toggle('hidden', m !== 'Delivery'); updateCartDisplay(); }
+        function showRules() { playClick(); document.getElementById('rules-modal').classList.remove('hidden'); }
 
         async function submitOrder() {
             const itemsArr = []; const cartMap = {};
-            for(let id in cart) { if(cart[id] > 0) { itemsArr.push(`${itemsData[id].name} x${cart[id]}`); cartMap[id] = cart[id]; } }
-            const finalTotal = updateCartDisplay();
-            const orderData = { name: document.getElementById('cust-name').value, grade: document.getElementById('cust-grade').value, loc: (method === 'Pickup' ? "Falcons Nest" : document.getElementById('cust-loc').value), items: itemsArr.join(', '), rawItems: cartMap, total: finalTotal, status: 'active', timestamp: Date.now() };
-            
+            for(let id in cart) if(cart[id] > 0) { itemsArr.push(`${itemsData[id].name} x${cart[id]}`); cartMap[id] = cart[id]; }
+            const orderData = { name: document.getElementById('cust-name').value, grade: document.getElementById('cust-grade').value, loc: (method === 'Pickup' ? "Falcons Nest" : document.getElementById('cust-loc').value), items: itemsArr.join(', '), rawItems: cartMap, total: updateCartDisplay(), status: 'active', timestamp: Date.now() };
             const newRef = await db.ref('orders').push(orderData);
-            currentOrderId = newRef.key;
-            watchOrder(currentOrderId);
-
-            playSuccess();
-            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            watchOrder(newRef.key); playSuccess(); confetti();
             document.getElementById('order-flow').classList.add('hidden');
             document.getElementById('bottom-bar').classList.add('hidden');
             document.getElementById('rules-modal').classList.add('hidden');
             document.getElementById('receipt-page').classList.remove('hidden');
-            document.getElementById('receipt-id').innerText = "#" + currentOrderId.slice(-6).toUpperCase();
-            document.getElementById('receipt-total').innerText = finalTotal + "฿";
+            document.getElementById('receipt-id').innerText = "#" + newRef.key.slice(-6).toUpperCase();
+            document.getElementById('receipt-total').innerText = orderData.total + "฿";
             document.getElementById('receipt-items').innerText = itemsArr.join(', ');
             document.getElementById('receipt-location').innerText = orderData.loc;
-            
-            const activeSnap = await db.ref('orders').orderByChild('status').equalTo('active').once('value');
-            const count = activeSnap.exists() ? Object.keys(activeSnap.val()).length : 1;
-            document.getElementById('est-time').innerText = `${5+(count*2)}-${10+(count*2)}m`;
+            db.ref('orders').orderByChild('status').equalTo('active').once('value', s => {
+                const c = s.exists() ? Object.keys(s.val()).length : 1;
+                document.getElementById('est-time').innerText = `${5+(c*2)}-${10+(c*2)}m`;
+            });
         }
     </script>
 </body>
