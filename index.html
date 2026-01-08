@@ -3,282 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>THE BAG | Premium Campus Fuel</title>
+    <title>THE BAG | Beta v1.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
-        
-        :root { 
-            --bg: #e0f7fa; --card: #ffffff; --text: #0f172a; --border: #cffafe; 
-            --total-bg: rgba(255, 255, 255, 0.8); --total-text: #2563eb; --nav-icon: #2563eb;
-        }
-        .dark-mode { 
-            --bg: #020617; --card: #0f172a; --text: #f8fafc; --border: #1e293b; 
-            --total-bg: rgba(30, 41, 59, 0.8); --total-text: #60a5fa; --nav-icon: #f8fafc;
-        }
-
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text); transition: all 0.3s ease; }
+        :root { --bg: #e0f7fa; --card: #ffffff; --text: #0f172a; --border: #cffafe; --total-bg: rgba(255, 255, 255, 0.8); --total-text: #2563eb; --nav-icon: #2563eb; }
+        .dark-mode { --bg: #020617; --card: #0f172a; --text: #f8fafc; --border: #1e293b; --total-bg: rgba(30, 41, 59, 0.8); --total-text: #60a5fa; --nav-icon: #f8fafc; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text); transition: all 0.3s ease; overflow-x: hidden; }
         .bg-card { background-color: var(--card); border-color: var(--border); }
-        
-        body.flash-active { border-left: 10px solid #ef4444; border-right: 10px solid #ef4444; }
-        body.flash-active #top-marquee { background-color: #ef4444 !important; }
-
-        #sidebar { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); transform: translateX(-100%); z-index: 1000; }
+        #sidebar { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); transform: translateX(-100%); z-index: 1000; background-color: var(--card); color: var(--text); }
         #sidebar.open { transform: translateX(0); }
-        
         .marquee { white-space: nowrap; overflow: hidden; background: #3b82f6; color: white; padding: 8px 0; font-size: 11px; font-weight: 800; text-transform: uppercase; }
         .marquee-content { display: inline-block; animation: marquee 15s linear infinite; }
         @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
-
-        .snack-img { width: 90px; height: 110px; object-fit: cover; border-radius: 1.5rem; background: #f1f5f9; }
-        .method-btn.active { background: #3b82f6; color: white !important; }
-        
-        /* IMPROVED FROSTED GLASS FOR THE BOTTOM BAR */
-        .glass-bottom { 
-            background-color: rgba(255, 255, 255, 0.3); 
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
-            border-top: 1px solid rgba(255,255,255,0.2);
-        }
-        .dark-mode .glass-bottom { 
-            background-color: rgba(15, 23, 42, 0.3); 
-            border-top: 1px solid rgba(255,255,255,0.05);
-        }
-
-        .total-box { background-color: var(--total-bg); color: var(--total-text); border-radius: 1.25rem; padding: 0.75rem 1.5rem; border: 1px solid var(--border); box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        .nav-line { background-color: var(--nav-icon); height: 2px; width: 24px; transition: background-color 0.3s; }
-        
-        .pop-btn { transition: transform 0.1s; }
-        .pop-btn:active { transform: scale(0.92); }
-
-        .flash-decor { writing-mode: vertical-rl; font-size: 8px; font-weight: 900; color: #ef4444; text-transform: uppercase; opacity: 0; }
-        body.flash-active .flash-decor { opacity: 0.4; }
+        .glass-bottom { background-color: rgba(255, 255, 255, 0.3); backdrop-filter: blur(25px) saturate(180%); -webkit-backdrop-filter: blur(25px) saturate(180%); border-top: 1px solid rgba(255,255,255,0.2); }
+        .dark-mode .glass-bottom { background-color: rgba(15, 23, 42, 0.3); }
+        .total-box { background-color: var(--total-bg); color: var(--total-text); border-radius: 1.25rem; padding: 0.75rem 1.5rem; border: 1px solid var(--border); }
+        .nav-line { background-color: var(--nav-icon); height: 2px; width: 24px; }
+        #full-cancel-screen { z-index: 3000; }
     </style>
 </head>
 <body class="pb-64">
-
-    <div class="marquee" id="top-marquee">
-        <div class="marquee-content" id="m-text">The Bag Campus Fuel • 2026 Season Live •</div>
+    <div id="full-cancel-screen" class="fixed inset-0 bg-red-600 hidden flex flex-col items-center justify-center text-center p-10">
+        <h1 class="text-white text-7xl font-black italic uppercase mb-4">Order Canceled</h1>
+        <p class="text-red-200 text-xl font-bold mb-10">The staff could not fulfill your order at this time.</p>
+        <button onclick="location.reload()" class="bg-white text-red-600 px-12 py-5 rounded-2xl font-black uppercase shadow-2xl">Return to Store</button>
     </div>
 
-    <div id="sidebar" class="fixed top-0 left-0 h-full w-80 bg-white shadow-2xl p-8 flex flex-col text-slate-900 border-r dark:bg-slate-900 dark:text-white">
-        <button onclick="toggleMenu(); playPop()" class="text-slate-400 font-black uppercase mb-8 text-left text-xs">✕ Close</button>
-        
-        <div class="mb-10">
-            <h2 class="text-2xl font-black text-blue-600 italic uppercase mb-4">The Bag Team.</h2>
-            <p class="text-[11px] font-bold text-slate-400 italic mb-6 leading-relaxed">
-                Founded in a dorm room with one mission: to keep the campus fueled during late-night grinds. We handle the bag, you handle the grades.
-            </p>
-            <div class="space-y-3">
-                <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100 dark:bg-slate-800 dark:border-slate-700">
-                    <p class="text-[9px] font-black text-blue-600 uppercase">Founder</p>
-                    <p class="text-lg font-black italic">Alon Katz</p>
-                </div>
-                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
-                    <p class="text-[9px] font-black text-slate-500 uppercase">Co-Founder</p>
-                    <p class="text-lg font-black italic">Sean Raynes</p>
-                </div>
-            </div>
-        </div>
+    <div class="marquee" id="top-marquee"><div class="marquee-content" id="m-text">The Bag Campus Fuel • Beta v1.0 Live •</div></div>
 
-        <div class="mt-auto pt-6 border-t border-slate-100">
-            <p class="text-[10px] font-black uppercase text-slate-400 mb-2">Contact Us</p>
-            <p class="text-[11px] font-bold">200050@ucis.ac.th</p>
-            <p class="text-[11px] font-bold">250054@ucis.ac.th</p>
+    <div id="sidebar" class="fixed top-0 left-0 h-full w-80 shadow-2xl p-8 flex flex-col border-r">
+        <button onclick="toggleMenu(); playPop()" class="text-slate-400 font-black uppercase mb-8 text-left text-xs">✕ Close</button>
+        <div class="mb-10">
+            <h2 class="text-2xl font-black text-blue-600 italic uppercase mb-2">The Bag Team.</h2>
+            <p class="text-[15px] font-extrabold mb-8 leading-tight opacity-80">Campus lunch options were boring. We fixed it by delivering the snacks you actually want.</p>
+            <div class="space-y-3">
+                <div class="bg-blue-500/10 p-5 rounded-3xl border border-blue-500/20"><p class="text-[10px] font-black text-blue-600 uppercase">Founder</p><p class="text-xl font-black italic">Alon Katz</p></div>
+                <div class="bg-slate-500/10 p-5 rounded-3xl border border-slate-500/20"><p class="text-[10px] font-black text-slate-500 uppercase">Co-Founder</p><p class="text-xl font-black italic">Sean Raynes</p></div>
+            </div>
         </div>
     </div>
 
     <nav class="bg-card p-4 border-b sticky top-0 z-50 flex items-center px-6">
-        <div class="w-1/3">
-            <button onclick="toggleMenu(); playPop()" class="flex flex-col gap-1.5 pop-btn">
-                <div class="nav-line"></div>
-                <div class="nav-line"></div>
-                <div class="nav-line"></div>
-            </button>
-        </div>
-        <div class="w-1/3 text-center"><h1 class="text-xl font-black text-blue-600 italic uppercase">The Bag.</h1></div>
-        <div class="w-1/3 text-right"><button onclick="toggleDarkMode(); playPop()" class="text-xl pop-btn">🌙</button></div>
+        <div class="w-1/3"><button onclick="toggleMenu(); playPop()" class="flex flex-col gap-1.5"><div class="nav-line"></div><div class="nav-line"></div><div class="nav-line"></div></button></div>
+        <div class="w-1/3 text-center"><h1 class="text-xl font-black text-blue-600 italic uppercase">The Bag.</h1><span class="text-[8px] font-black bg-blue-600 text-white px-2 py-0.5 rounded-full">BETA</span></div>
+        <div class="w-1/3 text-right"><button onclick="toggleDarkMode(); playPop()" class="text-xl">🌙</button></div>
     </nav>
 
     <main class="max-w-xl mx-auto p-6">
-        <div id="order-flow">
+        <div id="flash-timer-box" class="hidden mb-6 bg-red-600 p-8 rounded-[3rem] text-center text-white shadow-xl">
+            <p class="text-xs font-black uppercase tracking-widest opacity-80 mb-1">Flash Sale Ending</p>
+            <h2 id="timer-display" class="text-5xl font-black italic">00:00</h2>
+        </div>
+        <div id="order-form">
             <section class="bg-card p-6 rounded-[2.5rem] border mb-6 shadow-sm">
                 <div class="grid grid-cols-2 gap-3 mb-4">
-                    <input type="text" id="cust-name" placeholder="Name" class="bg-slate-500/10 p-4 rounded-2xl outline-none font-bold text-sm">
-                    <input type="text" id="cust-grade" placeholder="Grade" class="bg-slate-500/10 p-4 rounded-2xl outline-none font-bold text-sm">
+                    <input type="text" id="cust-name" placeholder="Name" class="bg-slate-500/10 p-4 rounded-2xl outline-none font-bold">
+                    <input type="text" id="cust-grade" placeholder="Grade" class="bg-slate-500/10 p-4 rounded-2xl outline-none font-bold">
                 </div>
-                <div class="flex gap-2 p-1.5 bg-slate-500/10 rounded-2xl mb-4">
-                    <button onclick="setMethod('Pickup'); playPop()" id="btn-p" class="method-btn active flex-1 py-3 text-[10px] font-black uppercase rounded-xl pop-btn">Pickup</button>
-                    <button onclick="setMethod('Delivery'); playPop()" id="btn-d" class="method-btn flex-1 py-3 text-[10px] font-black uppercase rounded-xl pop-btn">Delivery (+15฿)</button>
+                <div class="flex gap-2 p-1.5 bg-slate-500/10 rounded-2xl">
+                    <button onclick="setMethod('Pickup'); playPop()" id="btn-p" class="bg-blue-600 text-white flex-1 py-3 text-[10px] font-black uppercase rounded-xl">Pickup</button>
+                    <button onclick="setMethod('Delivery'); playPop()" id="btn-d" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl">Delivery (+15฿)</button>
                 </div>
-                <input type="text" id="cust-loc" placeholder="Room Number / Location" class="hidden w-full bg-slate-500/10 p-4 rounded-2xl font-bold border-2 border-blue-400 outline-none text-sm">
             </section>
             <div id="inventory" class="space-y-3"></div>
         </div>
-
-        <div id="receipt" class="hidden text-center py-20 bg-card rounded-[3rem] border-4 border-blue-600">
-            <h2 class="text-5xl font-black uppercase italic text-blue-600">Secured.</h2>
-            <p id="final-total" class="text-3xl font-black mt-4"></p>
-            <button onclick="location.reload(); playPop()" class="mt-8 text-blue-600 font-black uppercase text-xs underline pop-btn">Place New Order</button>
-        </div>
     </main>
 
-    <div id="rules-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[1500] hidden flex items-center justify-center p-6">
-        <div class="bg-white rounded-[2.5rem] p-8 max-w-sm w-full relative shadow-2xl border-b-8 border-blue-600 dark:bg-slate-900">
-            <button onclick="closeRules(); playPop()" class="absolute top-6 right-6 text-slate-400 font-bold">✕</button>
-            <h2 class="text-2xl font-black uppercase italic text-blue-600 mb-6 text-center">The Rules</h2>
-            <ul class="space-y-4 text-sm font-bold italic text-slate-700 dark:text-slate-300 mb-8 text-left">
-                <li class="flex gap-3"><span>1.</span><span>No orders during class hours.</span></li>
-                <li class="flex gap-3"><span>2.</span><span>Cash must be ready upon arrival.</span></li>
-                <li class="flex gap-3"><span>3.</span><span>Promo codes coming soon.</span></li>
-            </ul>
-            <button onclick="confirmSubmit(); playPop()" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase text-xs shadow-lg pop-btn">Accept & Buy</button>
-        </div>
-    </div>
-
-    <div id="canceled-screen" class="fixed inset-0 bg-slate-50 z-[2001] hidden flex items-center justify-center p-8 text-center dark:bg-slate-950">
-        <div class="bg-white p-12 rounded-[3rem] shadow-2xl border-t-8 border-red-500 max-w-sm dark:bg-slate-900">
-            <h2 class="text-5xl font-black uppercase italic text-red-500 mb-4">Canceled</h2>
-            <p class="text-slate-500 font-bold mb-10 italic">Your order was canceled by the staff.</p>
-            <button onclick="location.reload(); playPop()" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-black uppercase text-xs pop-btn">Try Again</button>
-        </div>
-    </div>
-
-    <div id="bottom-bar" class="fixed bottom-0 left-0 right-0 p-6 glass-bottom z-50">
+    <div class="fixed bottom-0 left-0 right-0 p-6 glass-bottom z-50">
         <div class="max-w-xl mx-auto flex justify-between items-center">
-            <div class="total-box transition-all">
-                <p class="text-[9px] font-black uppercase opacity-60">Total Paid <span id="total-flash-badge" class="hidden text-red-500">(-10%)</span></p>
-                <p class="text-xl font-black" id="total-display">0 THB</p>
-            </div>
-            <button onclick="showRules(); playPop()" class="bg-blue-600 text-white px-10 py-5 rounded-2xl font-black uppercase text-xs shadow-lg pop-btn">Secure Bag</button>
+            <div class="total-box"><p class="text-[9px] font-black uppercase opacity-60">Total Paid</p><p class="text-xl font-black" id="total-val">0 THB</p></div>
+            <button onclick="submitOrder(); playPop()" class="bg-blue-600 text-white px-10 py-5 rounded-2xl font-black uppercase text-xs shadow-lg">Secure Bag</button>
         </div>
     </div>
-
-    <div id="closed-screen" class="fixed inset-0 bg-white z-[2000] hidden flex flex-col items-center justify-center text-center p-6 dark:bg-slate-900">
-        <h1 class="text-6xl font-black uppercase italic text-blue-600 mb-4">Closed</h1>
-        <p class="text-xl font-bold text-slate-400 uppercase tracking-widest">The Bag is refueling 😴</p>
-    </div>
-
     <audio id="pop-sfx" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3" preload="auto"></audio>
 
     <script>
         const firebaseConfig = { apiKey: "AIzaSyAFGoJyyvtspQSauHUrWvSBWNF2taGJOYE", databaseURL: "https://thebagsite-default-rtdb.asia-southeast1.firebasedatabase.app/", projectId: "thebagsite" };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-
-        let cart = {}, stock = {}, method = "Pickup", deliveryFee = 0, isFlash = false;
-        const itemsData = {
-            squid_l_red: { name: "Large Squid (Red)", price: 35, img: "squid_l_red.png" },
-            squid_l_orange: { name: "Large Squid (Orange)", price: 35, img: "squid_l_orange.png" },
-            squid_g: { name: "Small Squid (Green)", price: 15, img: "squid_g.png" },
-            squid_o: { name: "Small Squid (Orange)", price: 15, img: "squid_o.png" },
-            squid_r: { name: "Small Squid (Red)", price: 15, img: "squid_r.png" },
-            doritos: { name: "Cheese Doritos", price: 30, img: "doritos.png" },
-            pocky: { name: "Pocky Choco", price: 35, img: "pocky.png" },
-            oreo: { name: "Oreo Pack", price: 15, img: "oreo.png" },
-            lays_s: { name: "Lays Seaweed", price: 15, img: "lays_s.png" },
-            lays_n: { name: "Lays Normal", price: 15, img: "lays_n.png" },
-            gummy: { name: "Gummy Bears", price: 30, img: "gummy.png" },
-            gum: { name: "Chewing Gum", price: 30, img: "gum.png" }
-        };
-
-        function playPop() { const a = document.getElementById('pop-sfx'); a.currentTime = 0; a.play().catch(()=>{}); }
+        firebase.initializeApp(firebaseConfig); const db = firebase.database();
+        let cart = {}, stock = {}, isFlash = false, method = "Pickup";
+        const pop = document.getElementById('pop-sfx');
+        document.addEventListener('click', () => { pop.play().then(() => { pop.pause(); pop.currentTime = 0; }); }, { once: true });
+        function playPop() { pop.currentTime = 0; pop.play().catch(()=>{}); }
         function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
         function toggleDarkMode() { document.body.classList.toggle('dark-mode'); }
-        function showRules() { 
-            const name = document.getElementById('cust-name').value;
-            const hasItems = Object.values(cart).some(q => q > 0);
-            if(!name || !hasItems) return alert("Please fill Name and add Items!");
-            document.getElementById('rules-modal').classList.remove('hidden'); 
-        }
-        function closeRules() { document.getElementById('rules-modal').classList.add('hidden'); }
 
         db.ref('settings/flashSale').on('value', snap => {
-            const data = snap.val() || { active: false, end: 0 };
-            isFlash = data.active && data.end > Date.now();
-            document.body.classList.toggle('flash-active', isFlash);
-            document.getElementById('total-flash-badge').classList.toggle('hidden', !isFlash);
-            
-            if (isFlash) {
-                const timerInt = setInterval(() => {
-                    const diff = data.end - Date.now();
-                    if (diff <= 0) { clearInterval(timerInt); location.reload(); }
-                    const m = Math.floor(diff/60000), s = Math.floor((diff%60000)/1000);
-                    document.getElementById('m-text').innerText = `⚡ FLASH SALE ENDS IN: ${m}m ${s}s - 10% OFF ⚡`;
-                }, 1000);
-            } else {
-                document.getElementById('m-text').innerText = "The Bag Campus Fuel • 2026 Season Live •";
-            }
-            renderInventory(); updateCartDisplay();
+            const data = snap.val() || {}; isFlash = data.active && data.end > Date.now();
+            document.getElementById('flash-timer-box').classList.toggle('hidden', !isFlash);
+            if(isFlash) { setInterval(() => {
+                const diff = data.end - Date.now();
+                const m = Math.floor(diff/60000), s = Math.floor((diff%60000)/1000);
+                document.getElementById('timer-display').innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+            }, 1000); }
         });
 
-        db.ref('settings/storeOpen').on('value', snap => { 
-            document.getElementById('closed-screen').classList.toggle('hidden', snap.val() !== false); 
+        db.ref('stock').on('value', snap => {
+            stock = snap.val() || {}; const container = document.getElementById('inventory'); container.innerHTML = "";
+            Object.keys(stock).forEach(id => {
+                const s = stock[id];
+                container.innerHTML += `<div class="bg-card p-4 rounded-[2rem] flex items-center justify-between border ${s <= 0 ? 'opacity-30 pointer-events-none' : ''}">
+                    <div class="flex flex-col">${s > 0 && s <= 2 ? `<span class="text-[8px] font-black text-red-500 uppercase">Only ${s} left!</span>` : ''}<h3 class="font-black text-sm uppercase italic">${id.replace(/_/g,' ')}</h3></div>
+                    <div class="flex items-center gap-3 bg-slate-500/10 p-1 rounded-xl">
+                        <button onclick="updateQty('${id}', -1); playPop()" class="w-8 h-8 font-black">-</button>
+                        <span class="font-black">${cart[id] || 0}</span>
+                        <button onclick="updateQty('${id}', 1); playPop()" class="w-8 h-8 font-black">+</button>
+                    </div></div>`;
+            });
         });
 
-        db.ref('stock').on('value', snap => { stock = snap.val() || {}; renderInventory(); });
-
-        function renderInventory() {
-            const container = document.getElementById('inventory');
-            container.innerHTML = "";
-            Object.keys(itemsData).forEach(id => {
-                const item = itemsData[id]; const s = stock[id] || 0;
-                const price = isFlash ? Math.floor(item.price * 0.9) : item.price;
-                container.innerHTML += `
-                <div class="relative bg-card p-4 rounded-[2rem] flex items-center gap-4 border ${s <= 0 ? 'opacity-30 grayscale pointer-events-none' : ''}">
-                    <div class="flash-decor">FLASH SALE</div>
-                    <img src="${item.img}" class="snack-img">
-                    <div class="flex-1">
-                        <h3 class="font-black text-sm uppercase italic">${item.name}</h3>
-                        <div class="flex items-center justify-between mt-4">
-                            <span class="font-black text-blue-600">${price}฿ ${isFlash ? '<span class="text-[10px] text-red-500">(-10%)</span>' : ''}</span>
-                            <div class="flex items-center gap-3 bg-slate-500/10 p-1 rounded-xl">
-                                <button onclick="updateQty('${id}', -1); playPop()" class="w-8 h-8 font-black pop-btn">-</button>
-                                <span class="font-black text-sm">${cart[id] || 0}</span>
-                                <button onclick="updateQty('${id}', 1); playPop()" class="w-8 h-8 font-black pop-btn" ${s <= (cart[id]||0) ? 'disabled' : ''}>+</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="flash-decor">FLASH SALE</div>
-                </div>`;
-            });
+        function updateQty(id, amt) {
+            cart[id] = Math.max(0, Math.min(stock[id], (cart[id] || 0) + amt));
+            let total = (method === "Delivery" ? 15 : 0); Object.keys(cart).forEach(k => total += (cart[k] * 15));
+            document.getElementById('total-val').innerText = total + " THB";
         }
 
-        function updateQty(id, amt) { cart[id] = Math.max(0, Math.min(stock[id], (cart[id] || 0) + amt)); updateCartDisplay(); renderInventory(); }
-        function updateCartDisplay() {
-            let t = deliveryFee; 
-            for (let id in cart) {
-                const p = isFlash ? Math.floor(itemsData[id].price * 0.9) : itemsData[id].price;
-                t += (cart[id] * p);
-            }
-            document.getElementById('total-display').innerText = t + " THB"; 
-            return t;
-        }
-
-        function setMethod(m) { 
-            method = m; deliveryFee = (m === "Delivery" ? 15 : 0);
-            document.getElementById('cust-loc').classList.toggle('hidden', m !== 'Delivery');
-            document.getElementById('btn-p').classList.toggle('active', m === 'Pickup');
-            document.getElementById('btn-d').classList.toggle('active', m === 'Delivery');
-            updateCartDisplay();
-        }
-
-        async function confirmSubmit() {
-            const name = document.getElementById('cust-name').value;
-            const items = []; for(let id in cart) if(cart[id] > 0) items.push(`${itemsData[id].name} x${cart[id]}`);
-            closeRules();
-            const totalStr = document.getElementById('total-display').innerText;
-            const ref = await db.ref('orders').push({ 
-                name, grade: document.getElementById('cust-grade').value, location: document.getElementById('cust-loc').value || "Pickup",
-                items: items.join(', '), status: 'active', timestamp: Date.now(), total: totalStr
-            });
-            document.getElementById('order-flow').classList.add('hidden');
-            document.getElementById('bottom-bar').classList.add('hidden');
-            document.getElementById('receipt').classList.remove('hidden');
-            document.getElementById('final-total').innerText = totalStr;
+        async function submitOrder() {
+            const name = document.getElementById('cust-name').value; if(!name) return alert("Name required");
+            const ref = await db.ref('orders').push({ name, status: 'active', timestamp: Date.now() });
+            db.ref('orders/' + ref.key).on('value', snap => { if(snap.val()?.status === 'cancelled') document.getElementById('full-cancel-screen').classList.remove('hidden'); });
             confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
         }
     </script>
