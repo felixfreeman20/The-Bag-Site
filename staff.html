@@ -28,7 +28,7 @@
             <div class="glass p-8 rounded-[3rem]">
                 <h2 class="text-4xl font-black mb-6" id="rev">0฿</h2>
                 <div id="stock-list" class="space-y-3 mb-6"></div>
-                <button onclick="saveStock()" class="w-full bg-blue-600 py-4 rounded-xl font-black">Update Stock</button>
+                <button onclick="saveStock()" class="w-full bg-blue-600 py-4 rounded-xl font-black uppercase">Update Stock</button>
             </div>
         </div>
     </div>
@@ -61,7 +61,10 @@
                     <button onclick="cancelOrder('${id}')" class="absolute top-6 right-6 text-slate-500 hover:text-red-500 font-bold">CANCEL</button>
                     <p class="font-black text-xl">${o.name} <span class="text-blue-500 text-xs">${o.grade}</span></p>
                     <p class="text-sm text-slate-300 my-3 bg-white/5 p-4 rounded-xl">${o.items}</p>
-                    <p class="text-xs font-bold text-cyan-400 mb-6 italic">📍 ${o.loc}</p>
+                    <div class="flex justify-between items-center mb-6">
+                        <p class="text-xs font-bold text-cyan-400 italic">📍 ${o.loc}</p>
+                        ${o.promo !== "None" ? `<span class="bg-green-600 text-[8px] p-1 px-2 rounded-lg">PROMO: ${o.promo}</span>` : ''}
+                    </div>
                     <button onclick="bank('${id}', ${o.total})" class="w-full bg-green-600 py-4 rounded-xl font-black">Bank ${o.total}฿</button>
                 </div>`;
             });
