@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
         
@@ -16,7 +17,7 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text); transition: all 0.3s ease; }
         .bg-card { background-color: var(--card); border-color: var(--border); }
         
-        /* FLASH SALE: SIDE BORDERS ONLY */
+        /* FLASH SALE: SIDE BORDERS */
         body.flash-active { border-left: 10px solid #ef4444; border-right: 10px solid #ef4444; }
         body.flash-active #top-marquee { background-color: #ef4444 !important; }
 
@@ -30,10 +31,22 @@
         .snack-img { width: 90px; height: 110px; object-fit: cover; border-radius: 1.5rem; background: #f1f5f9; }
         .method-btn.active { background: #3b82f6; color: white !important; }
         
-        .glass-bottom { background-color: rgba(255, 255, 255, 0.75); backdrop-filter: blur(15px); border-top: 1px solid rgba(0,0,0,0.05); }
-        .dark-mode .glass-bottom { background-color: rgba(15, 23, 42, 0.75); border-top: 1px solid rgba(255,255,255,0.1); }
+        /* THE GLASS BOTTOM UI */
+        .glass-bottom { 
+            background-color: rgba(255, 255, 255, 0.75); 
+            backdrop-filter: blur(15px); 
+            -webkit-backdrop-filter: blur(15px);
+            border-top: 1px solid rgba(0,0,0,0.05); 
+        }
+        .dark-mode .glass-bottom { 
+            background-color: rgba(15, 23, 42, 0.75); 
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
 
         .total-box { background-color: var(--total-bg); color: var(--total-text); border-radius: 1.25rem; padding: 0.75rem 1.5rem; }
+        
+        .pop-btn { transition: transform 0.1s; }
+        .pop-btn:active { transform: scale(0.92); }
     </style>
 </head>
 <body class="pb-64">
@@ -41,7 +54,7 @@
     <div class="marquee" id="top-marquee"><p id="m-text">The Bag Campus Fuel • 2026 Season Live •</p></div>
 
     <div id="sidebar" class="fixed top-0 left-0 h-full w-80 bg-white shadow-2xl p-8 flex flex-col text-slate-900 border-r dark:bg-slate-900 dark:text-white">
-        <button onclick="toggleMenu()" class="text-slate-400 font-black uppercase mb-8 text-left text-xs">✕ Close</button>
+        <button onclick="toggleMenu(); playPop()" class="text-slate-400 font-black uppercase mb-8 text-left text-xs">✕ Close</button>
         
         <div class="mb-10">
             <h2 class="text-2xl font-black text-blue-600 italic uppercase mb-4">The Bag Team.</h2>
@@ -57,15 +70,6 @@
             </div>
         </div>
 
-        <div class="mb-10">
-            <h2 class="text-xs font-black uppercase text-blue-400 mb-4 tracking-widest">The Rules</h2>
-            <ul class="space-y-4 text-sm font-bold italic text-slate-600">
-                <li>1. No orders during class</li>
-                <li>2. Cash must be ready</li>
-                <li>3. Promo codes coming soon</li>
-            </ul>
-        </div>
-
         <div class="mt-auto pt-6 border-t border-slate-100">
             <p class="text-[10px] font-black uppercase text-slate-400 mb-2">Contact Us</p>
             <p class="text-[11px] font-bold text-slate-600">200050@ucis.ac.th</p>
@@ -75,14 +79,14 @@
 
     <nav class="bg-card p-4 border-b sticky top-0 z-50 flex items-center px-6">
         <div class="w-1/3">
-            <button onclick="toggleMenu()" class="flex flex-col gap-1">
+            <button onclick="toggleMenu(); playPop()" class="flex flex-col gap-1 pop-btn">
                 <div class="w-6 h-0.5 bg-blue-600"></div>
                 <div class="w-6 h-0.5 bg-blue-600"></div>
                 <div class="w-6 h-0.5 bg-blue-600"></div>
             </button>
         </div>
         <div class="w-1/3 text-center"><h1 class="text-xl font-black text-blue-600 italic uppercase">The Bag.</h1></div>
-        <div class="w-1/3 text-right"><button onclick="toggleDarkMode()" id="theme-btn" class="text-xl">🌙</button></div>
+        <div class="w-1/3 text-right"><button onclick="toggleDarkMode(); playPop()" class="text-xl pop-btn">🌙</button></div>
     </nav>
 
     <main class="max-w-xl mx-auto p-6">
@@ -93,8 +97,8 @@
                     <input type="text" id="cust-grade" placeholder="Grade" class="bg-slate-500/10 p-4 rounded-2xl outline-none font-bold text-sm">
                 </div>
                 <div class="flex gap-2 p-1.5 bg-slate-500/10 rounded-2xl mb-4">
-                    <button onclick="setMethod('Pickup')" id="btn-p" class="method-btn active flex-1 py-3 text-[10px] font-black uppercase rounded-xl">Pickup</button>
-                    <button onclick="setMethod('Delivery')" id="btn-d" class="method-btn flex-1 py-3 text-[10px] font-black uppercase rounded-xl">Delivery (+15฿)</button>
+                    <button onclick="setMethod('Pickup'); playPop()" id="btn-p" class="method-btn active flex-1 py-3 text-[10px] font-black uppercase rounded-xl pop-btn">Pickup</button>
+                    <button onclick="setMethod('Delivery'); playPop()" id="btn-d" class="method-btn flex-1 py-3 text-[10px] font-black uppercase rounded-xl pop-btn">Delivery (+15฿)</button>
                 </div>
                 <input type="text" id="cust-loc" placeholder="Room Number / Location" class="hidden w-full bg-slate-500/10 p-4 rounded-2xl font-bold border-2 border-blue-400 outline-none text-sm">
             </section>
@@ -105,15 +109,28 @@
         <div id="receipt" class="hidden text-center py-20 bg-card rounded-[3rem] border-4 border-blue-600">
             <h2 class="text-5xl font-black uppercase italic text-blue-600">Secured.</h2>
             <p id="final-total" class="text-3xl font-black mt-4"></p>
-            <button onclick="location.reload()" class="mt-8 text-blue-600 font-black uppercase text-xs underline">Place New Order</button>
+            <button onclick="location.reload(); playPop()" class="mt-8 text-blue-600 font-black uppercase text-xs underline pop-btn">Place New Order</button>
         </div>
     </main>
+
+    <div id="rules-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[1500] hidden flex items-center justify-center p-6">
+        <div class="bg-white rounded-[2.5rem] p-8 max-w-sm w-full relative shadow-2xl border-b-8 border-blue-600">
+            <button onclick="closeRules(); playPop()" class="absolute top-6 right-6 text-slate-400 font-bold">✕</button>
+            <h2 class="text-2xl font-black uppercase italic text-blue-600 mb-6">The Rules</h2>
+            <ul class="space-y-4 text-sm font-bold italic text-slate-700 mb-8 text-left">
+                <li class="flex gap-3"><span>1.</span><span>No orders during class.</span></li>
+                <li class="flex gap-3"><span>2.</span><span>Cash must be ready.</span></li>
+                <li class="flex gap-3"><span>3.</span><span>Promo codes coming soon.</span></li>
+            </ul>
+            <button onclick="confirmSubmit(); playPop()" class="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase text-xs shadow-lg pop-btn">Accept & Buy</button>
+        </div>
+    </div>
 
     <div id="canceled-screen" class="fixed inset-0 bg-slate-50 z-[2001] hidden flex items-center justify-center p-8 text-center">
         <div class="bg-white p-12 rounded-[3rem] shadow-2xl border-t-8 border-red-500 max-w-sm">
             <h2 class="text-5xl font-black uppercase italic text-red-500 mb-4">Canceled</h2>
             <p class="text-slate-500 font-bold mb-10 italic">Your order was canceled by the staff.</p>
-            <button onclick="location.reload()" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-black uppercase text-xs">Try Again</button>
+            <button onclick="location.reload(); playPop()" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-black uppercase text-xs pop-btn">Try Again</button>
         </div>
     </div>
 
@@ -123,7 +140,7 @@
                 <p class="text-[9px] font-black uppercase opacity-50">Total</p>
                 <p class="text-xl font-black" id="total-display">0 THB</p>
             </div>
-            <button onclick="submitOrder()" class="bg-blue-600 text-white px-10 py-5 rounded-2xl font-black uppercase text-xs shadow-lg active:scale-95 transition-transform">Secure Bag</button>
+            <button onclick="showRules(); playPop()" class="bg-blue-600 text-white px-10 py-5 rounded-2xl font-black uppercase text-xs shadow-lg pop-btn">Secure Bag</button>
         </div>
     </div>
 
@@ -131,6 +148,8 @@
         <h1 class="text-6xl font-black uppercase italic text-blue-600 mb-4">Closed</h1>
         <p class="text-xl font-bold text-slate-400 uppercase tracking-widest">The Bag is refueling 😴</p>
     </div>
+
+    <audio id="pop-sfx" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3" preload="auto"></audio>
 
     <script>
         const firebaseConfig = { apiKey: "AIzaSyAFGoJyyvtspQSauHUrWvSBWNF2taGJOYE", databaseURL: "https://thebagsite-default-rtdb.asia-southeast1.firebasedatabase.app/", projectId: "thebagsite" };
@@ -154,8 +173,16 @@
             gum: { name: "Chewing Gum", price: 30, img: "gum.png" }
         };
 
+        function playPop() { const a = document.getElementById('pop-sfx'); a.currentTime = 0; a.play().catch(()=>{}); }
         function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
         function toggleDarkMode() { document.body.classList.toggle('dark-mode'); }
+        function showRules() { 
+            const name = document.getElementById('cust-name').value;
+            const hasItems = Object.values(cart).some(q => q > 0);
+            if(!name || !hasItems) return alert("Please fill Name and add Items!");
+            document.getElementById('rules-modal').classList.remove('hidden'); 
+        }
+        function closeRules() { document.getElementById('rules-modal').classList.add('hidden'); }
 
         db.ref('settings/flashSale').on('value', snap => {
             const data = snap.val() || { active: false, end: 0 };
@@ -185,9 +212,9 @@
                         <div class="flex items-center justify-between mt-4">
                             <span class="font-black text-blue-600">${price}฿ ${isFlash ? '<span class="text-[10px] text-red-500">(-10%)</span>' : ''}</span>
                             <div class="flex items-center gap-3 bg-slate-500/10 p-1 rounded-xl">
-                                <button onclick="updateQty('${id}', -1)" class="w-8 h-8 font-black">-</button>
+                                <button onclick="updateQty('${id}', -1); playPop()" class="w-8 h-8 font-black pop-btn">-</button>
                                 <span class="font-black text-sm">${cart[id] || 0}</span>
-                                <button onclick="updateQty('${id}', 1)" class="w-8 h-8 font-black" ${s <= (cart[id]||0) ? 'disabled' : ''}>+</button>
+                                <button onclick="updateQty('${id}', 1); playPop()" class="w-8 h-8 font-black pop-btn" ${s <= (cart[id]||0) ? 'disabled' : ''}>+</button>
                             </div>
                         </div>
                     </div>
@@ -214,11 +241,11 @@
             updateCartDisplay();
         }
 
-        async function submitOrder() {
+        async function confirmSubmit() {
             const name = document.getElementById('cust-name').value;
             const items = []; for(let id in cart) if(cart[id] > 0) items.push(`${itemsData[id].name} x${cart[id]}`);
-            if(!name || items.length === 0) return alert("Please fill in your name and select items!");
             
+            closeRules();
             const totalStr = document.getElementById('total-display').innerText;
             const ref = await db.ref('orders').push({ 
                 name, 
@@ -230,13 +257,12 @@
                 total: totalStr
             });
 
-            // UI Changes after order
             document.getElementById('order-flow').classList.add('hidden');
-            document.getElementById('bottom-bar').classList.add('hidden'); // REMOVE BUTTON BAR
+            document.getElementById('bottom-bar').classList.add('hidden');
             document.getElementById('receipt').classList.remove('hidden');
             document.getElementById('final-total').innerText = totalStr;
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
 
-            // Watch for cancellation
             db.ref('orders/' + ref.key).on('value', snap => {
                 if(snap.val()?.status === 'cancelled') {
                     document.getElementById('receipt').classList.add('hidden');
