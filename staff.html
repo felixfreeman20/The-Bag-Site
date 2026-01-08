@@ -18,18 +18,15 @@
             <img src="logo.png" class="h-12 w-12 object-contain">
             <h1 class="text-3xl font-black italic text-blue-500 uppercase">Bag HQ</h1>
         </div>
-        <button onclick="toggleFlash()" id="flash-btn" class="bg-red-600 px-8 py-3 rounded-2xl font-black text-xs uppercase">Flash Sale: OFF</button>
+        <div class="flex gap-4">
+            <button onclick="toggleStore()" id="store-btn" class="px-8 py-3 rounded-2xl font-black text-xs uppercase transition-all">Store: --</button>
+            <button onclick="toggleFlash()" id="flash-btn" class="bg-red-600 px-8 py-3 rounded-2xl font-black text-xs uppercase">Flash Sale: OFF</button>
+        </div>
     </header>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div class="lg:col-span-2">
-            <h2 class="text-xs font-black uppercase text-slate-500 mb-6 tracking-widest">Active Operations</h2>
-            <div id="order-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-        </div>
-        <div class="card-bg p-6 h-fit">
-            <h2 class="text-xs font-black uppercase text-slate-500 mb-6 tracking-widest">Inventory Control</h2>
-            <div id="stock-list" class="space-y-2"></div>
-        </div>
+        <div class="lg:col-span-2"><h2 class="text-xs font-black uppercase text-slate-500 mb-6 tracking-widest">Active Operations</h2><div id="order-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div></div>
+        <div class="card-bg p-6 h-fit"><h2 class="text-xs font-black uppercase text-slate-500 mb-6 tracking-widest">Inventory</h2><div id="stock-list" class="space-y-2"></div></div>
     </div>
 
     <script>
@@ -38,6 +35,18 @@
 
         function playPop() { document.getElementById('pop-sound').play(); }
 
+        // STORE TOGGLE
+        function toggleStore() {
+            db.ref('settings/storeOpen').once('value', snap => db.ref('settings/storeOpen').set(!snap.val()));
+        }
+        db.ref('settings/storeOpen').on('value', snap => {
+            const btn = document.getElementById('store-btn');
+            const open = snap.val();
+            btn.innerText = open ? "Store: Open" : "Store: Closed";
+            btn.className = open ? "bg-green-600 px-8 py-3 rounded-2xl font-black text-xs uppercase" : "bg-red-600 px-8 py-3 rounded-2xl font-black text-xs uppercase";
+        });
+
+        // ORDERS
         db.ref('orders').on('value', snap => {
             const list = document.getElementById('order-list'); list.innerHTML = "";
             const data = snap.val() || {};
@@ -46,18 +55,10 @@
                 if(o.status === 'completed' || o.status === 'cancelled') return;
                 list.innerHTML += `
                 <div class="card-bg p-6 border-l-4 ${o.status === 'pending' ? 'border-yellow-500' : 'border-blue-500'}">
-                    <div class="flex justify-between font-black uppercase text-sm mb-2">
-                        <span>${o.name} [Gr. ${o.grade}]</span>
-                        <span class="text-blue-500">${o.total}฿</span>
-                    </div>
+                    <div class="flex justify-between font-black uppercase text-sm mb-2"><span>${o.name} [Gr. ${o.grade}]</span><span class="text-blue-500">${o.total}฿</span></div>
                     <p class="text-slate-400 text-xs mb-6 font-medium">${o.items}</p>
                     <div class="flex gap-2">
-                        ${o.status === 'pending' ? `
-                            <button onclick="upd('${id}', 'active')" class="bg-blue-600 flex-1 py-3 rounded-xl font-black text-[10px] uppercase">Accept</button>
-                            <button onclick="upd('${id}', 'cancelled')" class="bg-red-600/20 text-red-500 w-1/3 py-3 rounded-xl font-black text-[10px] uppercase">Decline</button>
-                        ` : `
-                            <button onclick="upd('${id}', 'completed')" class="bg-green-600 flex-1 py-3 rounded-xl font-black text-[10px] uppercase">Complete</button>
-                        `}
+                        ${o.status === 'pending' ? `<button onclick="upd('${id}', 'active')" class="bg-blue-600 flex-1 py-3 rounded-xl font-black text-[10px] uppercase">Accept</button><button onclick="upd('${id}', 'cancelled')" class="bg-red-600/20 text-red-500 w-1/3 py-3 rounded-xl font-black text-[10px] uppercase">Decline</button>` : `<button onclick="upd('${id}', 'completed')" class="bg-green-600 flex-1 py-3 rounded-xl font-black text-[10px] uppercase">Complete</button>`}
                     </div>
                 </div>`;
             });
@@ -71,22 +72,12 @@
                 sList.innerHTML += `
                 <div class="flex items-center justify-between bg-slate-800/40 p-3 rounded-xl border border-slate-700">
                     <span class="text-[10px] font-black uppercase">${id.replace(/_/g, ' ')}</span>
-                    <div class="flex items-center gap-3">
-                        <button onclick="changeStock('${id}', -1)" class="w-6 h-6 bg-slate-700 rounded">-</button>
-                        <span class="font-bold text-xs">${stock[id]||0}</span>
-                        <button onclick="changeStock('${id}', 1)" class="w-6 h-6 bg-slate-700 rounded">+</button>
-                    </div>
+                    <div class="flex items-center gap-3"><button onclick="changeStock('${id}', -1)" class="w-6 h-6 bg-slate-700 rounded">-</button><span class="font-bold text-xs">${stock[id]||0}</span><button onclick="changeStock('${id}', 1)" class="w-6 h-6 bg-slate-700 rounded">+</button></div>
                 </div>`;
             });
         });
 
-        function toggleFlash() {
-            playPop();
-            db.ref('settings/flashSale').once('value', snap => {
-                const active = snap.val()?.active;
-                db.ref('settings/flashSale').set({ active: !active, end: !active ? Date.now() + 600000 : 0 });
-            });
-        }
+        function toggleFlash() { db.ref('settings/flashSale').once('value', snap => { const active = snap.val()?.active; db.ref('settings/flashSale').set({ active: !active, end: !active ? Date.now() + 600000 : 0 }); }); }
         db.ref('settings/flashSale/active').on('value', snap => {
             const btn = document.getElementById('flash-btn');
             btn.innerText = snap.val() ? "Flash Sale: ON" : "Flash Sale: OFF";
