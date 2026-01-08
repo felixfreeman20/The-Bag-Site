@@ -12,7 +12,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
         :root { --bg: #e0f7fa; --card: #ffffff; --text: #0f172a; --border: #cffafe; }
         .dark-mode { --bg: #020617; --card: #0f172a; --text: #f8fafc; --border: #1e293b; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text); transition: background 0.5s ease; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text); transition: background 0.5s ease; overflow-x: hidden; }
         .bg-card { background-color: var(--card); border-color: var(--border); }
         .blue-gradient { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
         .hidden { display: none !important; }
@@ -57,6 +57,12 @@
             <h2 class="text-3xl font-black text-blue-600 italic uppercase mb-4">The Story.</h2>
             <p class="text-slate-600 leading-relaxed mb-8 text-sm font-medium italic">The Bag Team founded this project to bring premium snacks directly to your classroom.</p>
             
+            <div class="bg-gradient-to-br from-yellow-400 to-orange-500 p-6 rounded-[2rem] text-white shadow-lg mb-8">
+                <p class="text-[10px] font-black uppercase mb-1 opacity-90">Rewards System</p>
+                <h4 class="text-xl font-black italic uppercase">Promo Codes</h4>
+                <p class="text-[10px] font-bold mt-2 bg-black/10 inline-block px-2 py-1 rounded-lg uppercase tracking-widest">Coming Soon</p>
+            </div>
+
             <div class="space-y-4 mb-10">
                 <div class="bg-cyan-50 p-4 rounded-2xl border border-cyan-100"><p class="text-[10px] font-black text-cyan-600 uppercase">Founder</p><p class="text-lg font-bold">Alon Katz</p></div>
                 <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100"><p class="text-[10px] font-black text-blue-600 uppercase">Co-Founder</p><p class="text-lg font-bold">Sean Raynes</p></div>
@@ -127,9 +133,15 @@
             squid_l_red: { name: "Large Squid (Red)", price: 35, img: "squid_l_red.png" },
             squid_l_orange: { name: "Large Squid (Orange)", price: 35, img: "squid_l_orange.png" },
             squid_g: { name: "Small Squid (Green)", price: 15, img: "squid_g.png" },
+            squid_o: { name: "Small Squid (Orange)", price: 15, img: "squid_o.png" },
+            squid_r: { name: "Small Squid (Red)", price: 15, img: "squid_r.png" },
             doritos: { name: "Cheese Doritos", price: 30, img: "doritos.png" },
             pocky: { name: "Pocky Choco", price: 35, img: "pocky.png" },
-            oreo: { name: "Oreo Pack", price: 15, img: "oreo.png" }
+            oreo: { name: "Oreo Pack", price: 15, img: "oreo.png" },
+            lays_s: { name: "Lays Seaweed", price: 15, img: "lays_s.png" },
+            lays_n: { name: "Lays Normal", price: 15, img: "lays_n.png" },
+            gummy: { name: "Gummy Bears", price: 30, img: "gummy.png" },
+            gum: { name: "Chewing Gum", price: 30, img: "gum.png" }
         };
 
         let cart = {}, stock = {}, method = "Pickup", deliveryFee = 0, sales = {};
