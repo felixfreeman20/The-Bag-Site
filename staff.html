@@ -8,21 +8,23 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #020617; color: white; }
-        .blur-screen { backdrop-filter: blur(50px); }
+        .blur-screen { backdrop-filter: blur(60px); -webkit-backdrop-filter: blur(60px); }
     </style>
 </head>
 <body class="p-8">
-
-    <div id="lock" class="fixed inset-0 blur-screen bg-slate-900/80 flex items-center justify-center z-50">
-        <div class="bg-slate-800 p-10 rounded-[3rem] border border-slate-700 text-center">
-            <h2 class="text-2xl font-black uppercase italic text-blue-500 mb-6">Staff Access</h2>
-            <input type="password" id="pass" placeholder="Enter Password" class="bg-slate-900 p-4 rounded-2xl outline-none border border-slate-700 mb-4 text-center font-bold">
-            <button onclick="checkPass()" class="w-full bg-blue-600 p-4 rounded-2xl font-black uppercase">Unlock Panel</button>
+    <div id="lock" class="fixed inset-0 blur-screen bg-slate-900/40 flex items-center justify-center z-[100]">
+        <div class="bg-slate-800/90 p-10 rounded-[3rem] border border-slate-700 text-center shadow-2xl">
+            <h2 class="text-2xl font-black uppercase italic text-blue-500 mb-6 tracking-tighter">Authorized Access Only</h2>
+            <input type="password" id="pass" placeholder="PASSWORD" class="bg-slate-900 p-5 rounded-2xl outline-none border border-slate-700 mb-4 text-center font-black tracking-widest w-full">
+            <button onclick="checkPass()" class="w-full bg-blue-600 p-5 rounded-2xl font-black uppercase hover:bg-blue-500 transition-colors">Login</button>
         </div>
     </div>
 
-    <div id="content" class="max-w-4xl mx-auto opacity-10">
-        <h1 class="text-4xl font-black italic uppercase text-blue-500 mb-10">Live Orders.</h1>
+    <div id="content" class="max-w-4xl mx-auto">
+        <div class="flex justify-between items-center mb-10">
+            <h1 class="text-4xl font-black italic uppercase text-blue-500">Active Orders</h1>
+            <div id="stats" class="text-right font-bold opacity-50 text-xs"></div>
+        </div>
         <div id="order-list" class="space-y-4"></div>
     </div>
 
@@ -31,31 +33,33 @@
         firebase.initializeApp(firebaseConfig); const db = firebase.database();
 
         function checkPass() {
-            if(document.getElementById('pass').value === "BAG2026") { // Set your password here
+            if(document.getElementById('pass').value === "MONEYTIME10") {
                 document.getElementById('lock').classList.add('hidden');
-                document.getElementById('content').classList.remove('opacity-10');
-            } else { alert("Wrong Password"); }
+            } else { alert("ACCESS DENIED"); }
         }
 
         db.ref('orders').on('value', snap => {
-            const list = document.getElementById('order-list');
-            list.innerHTML = "";
-            const orders = snap.val();
-            for(let id in orders) {
-                if(orders[id].status === 'active') {
-                    list.innerHTML += `
-                    <div class="bg-slate-800 p-6 rounded-3xl border border-slate-700 flex justify-between items-center">
-                        <div>
-                            <p class="text-xs font-black text-blue-400 uppercase">Student</p>
-                            <h3 class="text-xl font-black">${orders[id].name}</h3>
-                        </div>
-                        <button onclick="cancelOrder('${id}')" class="bg-red-600 px-6 py-3 rounded-xl font-black uppercase text-xs">Cancel Order</button>
-                    </div>`;
-                }
-            }
+            const list = document.getElementById('order-list'); list.innerHTML = "";
+            const orders = snap.val() || {};
+            const active = Object.keys(orders).filter(id => orders[id].status === 'active');
+            document.getElementById('stats').innerText = `${active.length} PENDING ORDERS`;
+            active.forEach(id => {
+                list.innerHTML += `
+                <div class="bg-slate-800/50 p-6 rounded-3xl border border-slate-700 flex justify-between items-center animate-in fade-in duration-500">
+                    <div>
+                        <p class="text-[10px] font-black text-blue-400 uppercase mb-1">Incoming Bag</p>
+                        <h3 class="text-xl font-black italic">${orders[id].name}</h3>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="done('${id}')" class="bg-green-600 px-6 py-3 rounded-xl font-black uppercase text-xs">Complete</button>
+                        <button onclick="cancel('${id}')" class="bg-red-600 px-6 py-3 rounded-xl font-black uppercase text-xs">Cancel</button>
+                    </div>
+                </div>`;
+            });
         });
 
-        function cancelOrder(id) { db.ref('orders/' + id).update({ status: 'cancelled' }); }
+        function done(id) { db.ref('orders/'+id).update({ status: 'completed' }); }
+        function cancel(id) { db.ref('orders/'+id).update({ status: 'cancelled' }); }
     </script>
 </body>
 </html>
