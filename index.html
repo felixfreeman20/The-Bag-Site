@@ -21,7 +21,6 @@
         #about-sidebar.open { transform: translateX(0); }
         #inventory-container { max-height: 480px; overflow-y: auto; padding-right: 8px; scrollbar-width: thin; display: flex; flex-direction: column; gap: 1rem; }
         
-        /* Badges */
         .badge-fire { background: #fef3c7; color: #d97706; border: 1px solid #fcd34d; font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 800; text-transform: uppercase; display: inline-flex; align-items: center; gap: 4px; }
         .badge-low { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 800; text-transform: uppercase; }
     </style>
@@ -183,7 +182,6 @@
             updateCartDisplay();
         }
 
-        // FETCH STOCK & SALES STATS
         db.ref('stock').on('value', snap => { stock = snap.val() || {}; renderInventory(); });
         db.ref('sales_counts').on('value', snap => { salesStats = snap.val() || {}; renderInventory(); });
 
@@ -193,33 +191,25 @@
             container.innerHTML = "";
             const sortedIds = Object.keys(itemsData).sort((a,b) => (stock[b]||0) - (stock[a]||0));
 
-            // FIND TOP SELLER (Max value in salesStats)
             let topSellerId = null;
             let maxSold = 0;
-            for(let id in salesStats) {
-                if(salesStats[id] > maxSold) { maxSold = salesStats[id]; topSellerId = id; }
-            }
+            for(let id in salesStats) { if(salesStats[id] > maxSold) { maxSold = salesStats[id]; topSellerId = id; } }
 
             sortedIds.forEach(id => {
                 const s = stock[id] || 0;
-                
-                // FEATURE 4: Top Seller Badge
                 let badgesHTML = "";
-                if(topSellerId === id && maxSold > 0) {
-                    badgesHTML += `<span class="badge-fire">🔥 Top Pick</span>`;
-                }
-
-                // FEATURE 1: Low Stock Warning (2 or less)
-                if(s > 0 && s <= 2) {
-                    badgesHTML += `<span class="badge-low ml-2">⚠️ Only ${s} Left</span>`;
-                }
+                if(topSellerId === id && maxSold > 0) badgesHTML += `<span class="badge-fire">🔥 Top Pick</span>`;
+                if(s > 0 && s <= 2) badgesHTML += `<span class="badge-low ml-2">⚠️ Only ${s} Left</span>`;
 
                 container.innerHTML += `
                 <div class="snack-card bg-card p-6 rounded-[2rem] shadow-sm flex justify-between items-center border ${s <= 0 ? 'sold-out' : ''}">
                     <div>
                         <div class="mb-1">${badgesHTML}</div>
                         <h3 class="font-bold text-lg">${itemsData[id].name}</h3>
-                        <p class="text-blue-600 font-black">${itemsData[id].price} THB</p>
+                        <div class="flex items-center gap-2">
+                           <p class="text-blue-600 font-black">${itemsData[id].price} THB</p>
+                           <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded-md">Stock: ${s}</span>
+                        </div>
                     </div>
                     <div class="flex items-center gap-4 bg-slate-500/10 p-1.5 rounded-2xl">
                         <button onclick="updateQty('${id}', -1)" class="w-10 h-10 bg-card rounded-xl shadow-sm font-bold border border-blue-500/10">-</button>
@@ -265,38 +255,32 @@
                 timestamp: Date.now() 
             };
 
-            // DB Updates
             const freshSnap = await db.ref('stock').once('value'); const fs = freshSnap.val();
             const salesSnap = await db.ref('sales_counts').once('value'); const ss = salesSnap.val() || {};
             
             let updates = {}; 
             for(let id in cartMap) { 
                 updates[`/stock/${id}`] = (fs[id] || 0) - cartMap[id];
-                updates[`/sales_counts/${id}`] = (ss[id] || 0) + cartMap[id]; // UPDATE SALES STATS
+                updates[`/sales_counts/${id}`] = (ss[id] || 0) + cartMap[id];
             }
             
             const newRef = await db.ref('orders').push(orderData); await db.ref().update(updates);
             
-            // FEATURE 5: Dynamic Wait Time Calculation
             const activeSnap = await db.ref('orders').orderByChild('status').equalTo('active').once('value');
             const activeCount = activeSnap.exists() ? Object.keys(activeSnap.val()).length : 1;
-            const waitTimeMin = 5 + (activeCount * 3); // Base 5 mins + 3 mins per order
+            const waitTimeMin = 5 + (activeCount * 3);
             const waitTimeMax = waitTimeMin + 5;
 
-            // FEATURE 7: Play Sound (Soft Volume)
             const sound = document.getElementById('success-sound');
             sound.volume = 0.4;
             sound.play().catch(e => console.log("Audio play failed:", e));
 
-            // FEATURE 3: Confetti (Not too much)
             confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 } });
 
-            // Listen for cancellation
             db.ref('orders/' + newRef.key).on('value', snap => {
                 if(snap.val() && snap.val().status === 'cancelled') showCancelledScreen();
             });
 
-            // HIDE UI
             document.getElementById('order-flow').classList.add('hidden');
             document.getElementById('bottom-bar').classList.add('hidden');
             document.getElementById('rules-modal').classList.add('hidden');
@@ -306,7 +290,7 @@
             document.getElementById('receipt-total').innerText = finalTotal + "฿";
             document.getElementById('receipt-items').innerText = itemsArr.join(', ');
             document.getElementById('receipt-location').innerText = orderData.loc;
-            document.getElementById('est-time').innerText = `${waitTimeMin}-${waitTimeMax} mins`; // Dynamic Time
+            document.getElementById('est-time').innerText = `${waitTimeMin}-${waitTimeMax} mins`;
             document.getElementById('receipt-page').classList.remove('hidden');
             window.scrollTo(0,0);
         }
