@@ -11,66 +11,93 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #020617; color: white; text-align: left; }
         .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
         .stock-input { background-color: #1d4ed8 !important; color: white !important; font-weight: 900; border: none; }
-        #stock-manager { max-height: 400px; overflow-y: auto; scrollbar-width: thin; }
     </style>
 </head>
 <body class="p-6">
     <audio id="notif-sound" src="https://assets.mixkit.co/active_storage/sfx/2017/2017-preview.mp3" preload="auto"></audio>
     <nav class="max-w-7xl mx-auto flex justify-between items-center mb-12">
         <h1 class="text-3xl font-black text-blue-500 uppercase italic">Staff HQ</h1>
-        <div class="flex items-center gap-8 text-right">
-            <div><p class="text-[10px] font-black text-green-500 uppercase">Banked Revenue</p><p class="text-3xl font-black" id="revenue-display">0 THB</p></div>
-            <button onclick="toggleStore()" id="status-btn" class="px-8 py-3 rounded-full font-black text-[10px] uppercase bg-green-500 transition-all shadow-lg">Open</button>
+        <div class="flex items-center gap-8">
+            <button onclick="startFlash()" class="bg-red-600 px-6 py-3 rounded-xl font-black text-[10px] uppercase">Start 15m Flash Sale</button>
+            <div class="text-right">
+                <p class="text-[10px] font-black text-green-500 uppercase">Revenue</p>
+                <p class="text-3xl font-black" id="revenue-display">0 THB</p>
+            </div>
+            <button onclick="toggleStore()" id="status-btn" class="px-8 py-3 rounded-full font-black text-[10px] uppercase bg-green-500">Open</button>
         </div>
     </nav>
+
     <main class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div class="lg:col-span-8">
-            <h2 class="text-[10px] font-black uppercase text-slate-500 mb-6">Active Orders (<span id="active-count">0</span>)</h2>
+            <h2 class="text-[10px] font-black uppercase text-slate-500 mb-6">Live Orders (<span id="active-count">0</span>)</h2>
             <div id="order-list" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
         </div>
         <div class="lg:col-span-4">
             <div class="glass-card p-6 rounded-[2.5rem]">
-                <h2 class="text-[10px] font-black uppercase text-blue-400 mb-6">Inventory Control</h2>
+                <h2 class="text-[10px] font-black uppercase text-blue-400 mb-6">Stock</h2>
                 <div id="stock-manager" class="space-y-3 mb-6"></div>
-                <button onclick="saveStock()" class="w-full bg-blue-600 py-4 rounded-2xl font-black text-xs uppercase shadow-lg transition-all">Save Supply</button>
-                <button onclick="resetBank()" class="w-full mt-6 text-[9px] text-slate-600 font-bold uppercase tracking-widest hover:text-red-400 transition-colors">Reset Bank Revenue & Top Sellers</button>
+                <button onclick="saveStock()" class="w-full bg-blue-600 py-4 rounded-2xl font-black text-xs uppercase transition-all">Save</button>
+                <button onclick="resetBank()" class="w-full mt-6 text-[9px] text-slate-600 font-bold uppercase hover:text-red-400 transition-colors">Reset Stats</button>
             </div>
         </div>
     </main>
+
     <script>
         const firebaseConfig = { apiKey: "AIzaSyAFGoJyyvtspQSauHUrWvSBWNF2taGJOYE", databaseURL: "https://thebagsite-default-rtdb.asia-southeast1.firebasedatabase.app/", projectId: "thebagsite" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         const itemIds = ['squid_l', 'doritos', 'squid_g', 'squid_o', 'squid_r', 'pocky', 'oreo', 'lays_s', 'lays_n', 'gummy', 'gum'];
         let lastCount = -1;
+
+        function startFlash() {
+            db.ref('settings/flashSale').set({ active: true, end: Date.now() + (15 * 60 * 1000) });
+            alert("Flash Sale Started for 15 Minutes!");
+        }
+
         db.ref('lifetime_revenue').on('value', snap => { document.getElementById('revenue-display').innerText = (snap.val() || 0) + " THB"; });
+        
         db.ref('orders').on('value', snap => {
-            const orders = snap.val(); const keys = orders ? Object.keys(orders).filter(k => orders[k].status !== 'cancelled') : [];
-            if (lastCount !== -1 && keys.length > lastCount) document.getElementById('notif-sound').play().catch(()=>{});
-            lastCount = keys.length;
-            document.getElementById('active-count').innerText = keys.length;
+            const orders = snap.val() || {}; 
+            const activeKeys = Object.keys(orders).filter(k => orders[k].status === 'active');
+            if (lastCount !== -1 && activeKeys.length > lastCount) document.getElementById('notif-sound').play().catch(()=>{});
+            lastCount = activeKeys.length;
+            document.getElementById('active-count').innerText = activeKeys.length;
             const list = document.getElementById('order-list'); list.innerHTML = "";
-            keys.reverse().forEach(id => {
-                const o = orders[id]; const nameParts = o.name.split(' ');
+            activeKeys.reverse().forEach(id => {
+                const o = orders[id];
                 list.innerHTML += `<div class="glass-card p-6 rounded-[2.5rem] border-t-2 border-blue-500/30 text-left relative">
-                        <button onclick="cancelAndRestock('${id}')" class="absolute top-4 right-4 text-slate-500 hover:text-red-500 font-black text-xl transition-colors">✕</button>
-                        <div class="flex justify-between items-baseline mb-1 pr-8">
-                            <div><span class="text-2xl font-black uppercase">${nameParts[0]}</span> <span class="text-xs font-bold text-slate-500 uppercase">${nameParts.slice(1).join(' ')}</span></div>
-                            <span class="text-[10px] font-black text-blue-500">${o.grade || ''}</span>
-                        </div>
+                        <button onclick="cancelOrder('${id}')" class="absolute top-4 right-4 text-slate-500 hover:text-red-500 font-black">✕</button>
+                        <div class="mb-1"><span class="text-2xl font-black uppercase">${o.name}</span> <span class="text-[10px] text-blue-500 font-black">${o.grade}</span></div>
                         <p class="text-sm font-bold text-slate-300 mb-4 bg-white/5 p-3 rounded-xl">${o.items}</p>
                         <p class="text-cyan-400 font-black text-xs mb-6 italic">📍 ${o.loc}</p>
-                        <button onclick="completeOrder('${id}', ${o.total})" class="w-full bg-green-600 py-3 rounded-xl font-black text-[10px] uppercase transition-all">Complete & Bank ${o.total}฿</button>
+                        <button onclick="completeOrder('${id}', ${o.total})" class="w-full bg-green-600 py-3 rounded-xl font-black text-[10px] uppercase">Bank ${o.total}฿</button>
                     </div>`;
             });
         });
+
         async function completeOrder(id, amt) { const snap = await db.ref('lifetime_revenue').once('value'); await db.ref('lifetime_revenue').set((snap.val() || 0) + amt); db.ref('orders/' + id).remove(); }
-        async function cancelAndRestock(id) { if(!confirm("Cancel fake order?")) return; const orderSnap = await db.ref('orders/' + id).once('value'); const o = orderSnap.val(); if(!o) return; const stockSnap = await db.ref('stock').once('value'); const s = stockSnap.val(); let updates = {}; for(let item in o.rawItems) { updates[`/stock/${item}`] = (s[item] || 0) + o.rawItems[item]; } await db.ref().update(updates); await db.ref('orders/' + id).update({ status: 'cancelled' }); setTimeout(() => { db.ref('orders/' + id).remove(); }, 10000); }
-        function resetBank() { if(confirm("Clear banked revenue AND reset Top Seller stats?")) { db.ref('lifetime_revenue').set(0); db.ref('sales_counts').remove(); } }
-        db.ref('stock').on('value', snap => { const s = snap.val() || {}; const m = document.getElementById('stock-manager'); m.innerHTML = ""; itemIds.forEach(id => { m.innerHTML += `<div class="flex justify-between items-center bg-white/5 p-3 rounded-xl"><span class="text-[10px] font-bold uppercase text-slate-400">${id.replace('_',' ')}</span><input type="number" id="input-${id}" value="${s[id] || 0}" class="w-12 stock-input rounded-lg p-1 text-center outline-none"></div>`; }); });
-        function saveStock() { let s = {}; itemIds.forEach(id => s[id] = parseInt(document.getElementById('input-'+id).value) || 0); db.ref('stock').set(s); alert("Supply Updated"); }
+        async function cancelOrder(id) {
+            const orderSnap = await db.ref('orders/' + id).once('value');
+            const o = orderSnap.val(); if(!o) return;
+            const stockSnap = await db.ref('stock').once('value');
+            const s = stockSnap.val(); let updates = {};
+            for(let item in o.rawItems) { updates[`/stock/${item}`] = (s[item] || 0) + o.rawItems[item]; }
+            await db.ref().update(updates);
+            await db.ref('orders/' + id).update({ status: 'cancelled' });
+            setTimeout(() => { db.ref('orders/' + id).remove(); }, 5000);
+        }
+
+        db.ref('stock').on('value', snap => {
+            const s = snap.val() || {}; const m = document.getElementById('stock-manager'); m.innerHTML = "";
+            itemIds.forEach(id => { m.innerHTML += `<div class="flex justify-between items-center bg-white/5 p-3 rounded-xl"><span class="text-[10px] font-bold uppercase text-slate-400">${id.replace('_',' ')}</span><input type="number" id="input-${id}" value="${s[id] || 0}" class="w-12 stock-input rounded-lg text-center outline-none"></div>`; });
+        });
+        function saveStock() { let s = {}; itemIds.forEach(id => s[id] = parseInt(document.getElementById('input-'+id).value) || 0); db.ref('stock').set(s); }
         function toggleStore() { db.ref('settings/isOpen').once('value', snap => db.ref('settings/isOpen').set(!snap.val())); }
-        db.ref('settings/isOpen').on('value', snap => { const btn = document.getElementById('status-btn'); btn.innerText = snap.val() ? "Open" : "Closed"; btn.className = snap.val() ? "px-8 py-3 rounded-full font-black text-[10px] uppercase bg-green-500" : "px-8 py-3 rounded-full font-black text-[10px] uppercase bg-red-500"; });
+        db.ref('settings/isOpen').on('value', snap => { 
+            const btn = document.getElementById('status-btn'); 
+            btn.innerText = snap.val() ? "Open" : "Closed"; btn.className = snap.val() ? "px-8 py-3 rounded-full font-black text-[10px] uppercase bg-green-500" : "px-8 py-3 rounded-full font-black text-[10px] uppercase bg-red-500"; 
+        });
+        function resetBank() { if(confirm("Clear revenue & stats?")) { db.ref('lifetime_revenue').set(0); db.ref('sales_counts').remove(); } }
     </script>
 </body>
 </html>
