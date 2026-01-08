@@ -139,14 +139,20 @@
         function updateAllStock() {
             const updates = {};
             items.forEach(id => {
-                const val = document.getElementById('manual-'+id).value;
-                if(val !== "") updates[id] = parseInt(val);
+                const input = document.getElementById('manual-'+id);
+                // Fix: Only update if the user has actually entered a value
+                if(input.value !== "") {
+                    updates[id] = parseInt(input.value);
+                }
             });
+
             if(Object.keys(updates).length > 0) {
                 db.ref('stock').update(updates).then(() => {
-                    alert("Stock Levels Synced!");
+                    alert("Stock Levels Updated!");
                     items.forEach(id => document.getElementById('manual-'+id).value = "");
                 });
+            } else {
+                alert("Type a new number in the boxes first!");
             }
         }
 
