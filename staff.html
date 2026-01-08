@@ -2,28 +2,28 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>STAFF HQ | The Bag</title>
+    <title>STAFF | The Bag</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
     <style>
-        body { background: #0f172a; color: white; font-family: sans-serif; }
-        .tab-btn.active { border-bottom: 4px solid #3b82f6; color: #3b82f6; }
+        body { background: #020617; color: white; font-family: 'Plus Jakarta Sans', sans-serif; }
+        .tab-btn.active { color: #3b82f6; border-bottom: 3px solid #3b82f6; }
     </style>
 </head>
-<body class="p-6">
+<body class="p-8">
     <audio id="pop-sound" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3" preload="auto"></audio>
     
-    <header class="flex justify-between items-center mb-8">
-        <h1 class="text-3xl font-black italic">THE BAG STAFF</h1>
-        <div class="flex gap-4">
-            <button onclick="setTab('new')" id="tab-new" class="tab-btn active px-4 py-2 font-bold uppercase text-sm">New Orders</button>
-            <button onclick="setTab('active')" id="tab-active" class="tab-btn px-4 py-2 font-bold uppercase text-sm">In Progress</button>
-            <button onclick="setTab('complete')" id="tab-complete" class="tab-btn px-4 py-2 font-bold uppercase text-sm">Completed</button>
+    <header class="flex justify-between items-center mb-10">
+        <h1 class="text-3xl font-black italic text-blue-500 uppercase">Staff HQ</h1>
+        <div class="flex gap-8">
+            <button onclick="setTab('new')" id="tab-new" class="tab-btn active font-black uppercase text-xs">New</button>
+            <button onclick="setTab('active')" id="tab-active" class="tab-btn font-black uppercase text-xs">Active</button>
+            <button onclick="setTab('complete')" id="tab-complete" class="tab-btn font-black uppercase text-xs">History</button>
         </div>
     </header>
 
-    <div id="order-list" class="grid gap-4"></div>
+    <div id="order-list" class="grid gap-6"></div>
 
     <script>
         const firebaseConfig = { apiKey: "AIzaSyAFGoJyyvtspQSauHUrWvSBWNF2taGJOYE", databaseURL: "https://thebagsite-default-rtdb.asia-southeast1.firebasedatabase.app/", projectId: "thebagsite" };
@@ -46,29 +46,27 @@
                 const list = document.getElementById('order-list');
                 list.innerHTML = "";
                 const data = snap.val() || {};
-                
                 Object.keys(data).reverse().forEach(id => {
-                    const order = data[id];
-                    // Filter logic
-                    if (currentTab === 'new' && order.status !== 'pending') return;
-                    if (currentTab === 'active' && order.status !== 'active') return;
-                    if (currentTab === 'complete' && order.status !== 'completed') return;
+                    const o = data[id];
+                    if (currentTab === 'new' && o.status !== 'pending') return;
+                    if (currentTab === 'active' && o.status !== 'active') return;
+                    if (currentTab === 'complete' && o.status !== 'completed') return;
 
                     list.innerHTML += `
-                    <div class="bg-slate-800 p-6 rounded-3xl border border-slate-700">
-                        <div class="flex justify-between items-start">
+                    <div class="bg-slate-900 p-8 rounded-[2rem] border border-slate-800">
+                        <div class="flex justify-between items-center">
                             <div>
-                                <h3 class="text-xl font-bold">${order.name} (${order.grade})</h3>
-                                <p class="text-blue-400 font-bold">${order.items}</p>
-                                <p class="text-xs text-slate-500 mt-2">${order.loc} • ${new Date(order.timestamp).toLocaleTimeString()}</p>
+                                <h3 class="text-xl font-black italic uppercase">${o.name} <span class="text-blue-500 font-mono text-sm">[${o.grade}]</span></h3>
+                                <p class="text-slate-400 font-bold mt-2">${o.items}</p>
+                                <p class="text-[10px] font-black uppercase text-slate-500 mt-4 tracking-widest">📍 ${o.loc}</p>
                             </div>
-                            <div class="flex gap-2">
+                            <div class="flex gap-3">
                                 ${currentTab === 'new' ? `
-                                    <button onclick="updateStatus('${id}', 'active')" class="bg-green-600 px-6 py-2 rounded-xl font-bold">ACCEPT</button>
-                                    <button onclick="updateStatus('${id}', 'cancelled')" class="bg-red-600 px-6 py-2 rounded-xl font-bold">DECLINE</button>
+                                    <button onclick="update('${id}', 'active')" class="bg-green-600 px-6 py-3 rounded-xl font-black text-xs">ACCEPT</button>
+                                    <button onclick="update('${id}', 'cancelled')" class="bg-red-600 px-6 py-3 rounded-xl font-black text-xs">DECLINE</button>
                                 ` : ''}
                                 ${currentTab === 'active' ? `
-                                    <button onclick="updateStatus('${id}', 'completed')" class="bg-blue-600 px-6 py-2 rounded-xl font-bold">MARK COMPLETE</button>
+                                    <button onclick="update('${id}', 'completed')" class="bg-blue-600 px-6 py-3 rounded-xl font-black text-xs">COMPLETE</button>
                                 ` : ''}
                             </div>
                         </div>
@@ -76,8 +74,7 @@
                 });
             });
         }
-
-        function updateStatus(id, s) { playPop(); db.ref('orders/' + id).update({ status: s }); }
+        function update(id, s) { playPop(); db.ref('orders/' + id).update({ status: s }); }
     </script>
 </body>
 </html>
