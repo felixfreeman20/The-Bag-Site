@@ -28,19 +28,22 @@
         .pop-btn { transition: transform 0.1s; }
         .pop-btn:active { transform: scale(0.95); }
         
-        /* SHOP CLOSED OVERLAY */
         #closed-screen { z-index: 9999; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
     </style>
 </head>
 <body class="pb-64">
     <div id="closed-screen" class="fixed inset-0 bg-slate-900/80 hidden flex flex-col items-center justify-center text-center p-10">
-        <h1 class="text-white text-6xl font-black italic uppercase italic">Shop Closed</h1>
+        <h1 class="text-white text-6xl font-black italic uppercase">Shop Closed</h1>
         <p class="text-slate-400 font-bold mt-4 uppercase tracking-widest">We are currently restockin' or takin' a break.</p>
     </div>
 
-    <div id="full-cancel-screen" class="fixed inset-0 bg-red-600 hidden flex flex-col items-center justify-center text-center z-[5000] p-10">
-        <h1 class="text-white text-7xl font-black italic uppercase">Canceled</h1>
-        <button onclick="location.reload()" class="mt-10 bg-white text-red-600 px-12 py-5 rounded-2xl font-black">BACK TO STORE</button>
+    <div id="full-cancel-screen" class="fixed inset-0 bg-slate-950 hidden flex flex-col items-center justify-center text-center z-[5000] p-10">
+        <div class="w-20 h-20 border-4 border-red-500/30 rounded-full flex items-center justify-center mb-6">
+            <span class="text-red-500 text-4xl font-black">!</span>
+        </div>
+        <h1 class="text-white text-6xl font-black italic uppercase">Order Declined</h1>
+        <p class="text-slate-400 font-bold mt-4 uppercase tracking-widest text-sm">Your order was canceled by the staff team.</p>
+        <button onclick="location.reload()" class="mt-10 bg-slate-800 text-white border border-slate-700 px-12 py-5 rounded-2xl font-black hover:bg-slate-700 transition-all">BACK TO STORE</button>
     </div>
 
     <div class="marquee" id="top-marquee"><div class="marquee-content" id="m-text">THE BAG CAMPUS FUEL • BETA v1.0 • LUNCH DELIVERY ACTIVE •</div></div>
@@ -88,17 +91,32 @@
             <div id="inventory" class="space-y-4"></div>
         </div>
 
-        <div id="receipt" class="hidden text-center py-20 bg-card rounded-[3rem] border-4 shadow-2xl" style="border-color:var(--accent)">
-            <h2 class="text-5xl font-black uppercase italic" style="color:var(--accent)">SECURED.</h2>
-            <div class="mt-8 p-8 bg-slate-500/5 rounded-[2rem] mx-6">
-                <p class="text-xs font-black uppercase opacity-50 tracking-widest">Estimated Delivery/Pickup</p>
-                <p id="wait-time" class="text-5xl font-black italic mt-2 tracking-tighter">-- mins</p>
+        <div id="receipt" class="hidden text-center py-16 bg-card rounded-[4rem] border-8 shadow-2xl overflow-hidden" style="border-color:var(--accent)">
+            <div class="bg-blue-600 py-4 mb-8">
+                <h2 class="text-4xl font-black uppercase italic text-white tracking-tighter">BAG SECURED.</h2>
             </div>
-            <button onclick="location.reload()" class="mt-10 font-black uppercase text-xs underline decoration-2 underline-offset-4">New Order</button>
+            
+            <div class="px-8">
+                <div class="p-10 bg-slate-500/5 rounded-[3rem] mb-8 border border-slate-500/10">
+                    <p class="text-[11px] font-black uppercase opacity-40 tracking-[0.2em] mb-2">Estimated Arrival</p>
+                    <p id="wait-time" class="text-7xl font-black italic tracking-tighter" style="color:var(--accent)">-- mins</p>
+                </div>
+
+                <div class="space-y-4 text-left bg-slate-500/5 p-8 rounded-[2.5rem] border border-slate-500/10 mb-8">
+                    <p class="text-xs font-black uppercase opacity-60 flex items-center gap-2"><span>⚖️</span> Rules & Info</p>
+                    <ul class="text-[13px] font-bold space-y-2 opacity-80">
+                        <li>• Prepare exact cash for faster checkout.</li>
+                        <li>• No class orders: Meet at the designated spot.</li>
+                        <li>• If delivery, stay near your phone for the call.</li>
+                    </ul>
+                </div>
+
+                <button onclick="location.reload()" class="font-black uppercase text-sm tracking-widest opacity-40 hover:opacity-100 transition-all">Place Another Order</button>
+            </div>
         </div>
     </main>
 
-    <div class="fixed bottom-0 left-0 right-0 p-6 glass-bottom z-50">
+    <div id="bottom-bar" class="fixed bottom-0 left-0 right-0 p-6 glass-bottom z-50">
         <div class="max-w-xl mx-auto flex justify-between items-center">
             <div class="p-4 rounded-2xl">
                 <p class="text-[9px] font-black uppercase opacity-60">Total Amount</p>
@@ -123,6 +141,21 @@
         db.ref('settings/storeOpen').on('value', snap => {
             const isOpen = snap.val();
             document.getElementById('closed-screen').classList.toggle('hidden', isOpen);
+        });
+
+        // BEST SELLER LOGIC (Last 4 Hours)
+        db.ref('orders').on('value', snap => {
+            const orders = snap.val() || {};
+            const counts = {};
+            const fourHoursAgo = Date.now() - (4 * 60 * 60 * 1000);
+            
+            Object.values(orders).forEach(o => {
+                if(o.timestamp > fourHoursAgo && o.items_list) {
+                    o.items_list.forEach(id => { counts[id] = (counts[id] || 0) + 1; });
+                }
+            });
+            bestSellerId = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b, "");
+            renderInventory();
         });
         
         const itemsData = {
@@ -199,7 +232,7 @@
 
         function updateCartDisplay() {
             let t = (method === "Delivery" ? 15 : 0);
-            Object.keys(cart).forEach(k => t += cart[k] * (isFlash ? Math.floor(itemsData[k].price * 0.9) : itemsData[k].price));
+            Object.keys(cart).forEach(k => t += (cart[k] || 0) * (isFlash ? Math.floor(itemsData[k].price * 0.9) : itemsData[k].price));
             document.getElementById('total-val').innerText = t + " THB";
         }
 
@@ -214,18 +247,33 @@
 
         async function submitOrder() {
             const n = document.getElementById('cust-name').value;
-            if(!n || Object.values(cart).every(v=>v===0)) return alert("Add items and name!");
+            const itemsInCart = Object.keys(cart).filter(k=>cart[k]>0);
+            if(!n || itemsInCart.length === 0) return alert("Add items and name!");
+            
             const snap = await db.ref('orders').once('value');
             const active = Object.values(snap.val() || {}).filter(o => o.status === 'active').length;
             const wait = (active * 3) + 5;
+
+            // DEDUCT STOCK & SAVE ORDER
+            const itemsListForBestSeller = [];
+            itemsInCart.forEach(id => {
+                const qty = cart[id];
+                for(let i=0; i<qty; i++) itemsListForBestSeller.push(id);
+                db.ref('stock/'+id).transaction(current => (current || 0) - qty);
+            });
+
             const ref = await db.ref('orders').push({ 
                 name: n, grade: document.getElementById('cust-grade').value, 
-                items: Object.keys(cart).filter(k=>cart[k]>0).map(k=>`${itemsData[k].name} x${cart[k]}`).join(', '),
+                items: itemsInCart.map(k=>`${itemsData[k].name} x${cart[k]}`).join(', '),
+                items_list: itemsListForBestSeller,
                 status: 'active', timestamp: Date.now(), location: method
             });
+
             document.getElementById('order-flow').classList.add('hidden');
+            document.getElementById('bottom-bar').classList.add('hidden'); // Hide bottom rectangle
             document.getElementById('receipt').classList.remove('hidden');
             document.getElementById('wait-time').innerText = wait + " mins";
+            
             confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
             db.ref('orders/'+ref.key).on('value', s => { if(s.val()?.status === 'cancelled') document.getElementById('full-cancel-screen').classList.remove('hidden'); });
         }
