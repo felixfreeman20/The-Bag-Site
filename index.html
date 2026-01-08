@@ -10,73 +10,92 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
-        :root { --bg: #e0f7fa; --card: #ffffff; --text: #0f172a; --border: #cffafe; --total-bg: rgba(255, 255, 255, 0.8); --total-text: #2563eb; --nav-icon: #2563eb; }
-        .dark-mode { --bg: #020617; --card: #0f172a; --text: #f8fafc; --border: #1e293b; --total-bg: rgba(30, 41, 59, 0.8); --total-text: #60a5fa; --nav-icon: #f8fafc; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text); transition: all 0.3s ease; overflow-x: hidden; }
-        .bg-card { background-color: var(--card); border-color: var(--border); }
-        #sidebar { transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); transform: translateX(-100%); z-index: 1000; background-color: var(--card); color: var(--text); }
+        :root { --bg: #e0f7fa; --card: #ffffff; --text: #0f172a; --accent: #2563eb; --glass: rgba(255, 255, 255, 0.25); }
+        .dark-mode { --bg: #020617; --card: #0f172a; --text: #f8fafc; --accent: #60a5fa; --glass: rgba(15, 23, 42, 0.25); }
+        .flash-active { --accent: #ef4444 !important; }
+        
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text); transition: all 0.3s ease; }
+        .bg-card { background-color: var(--card); border: 1px solid rgba(0,0,0,0.05); }
+        #sidebar { transition: transform 0.4s ease; transform: translateX(-100%); z-index: 1000; background: var(--card); }
         #sidebar.open { transform: translateX(0); }
-        .marquee { white-space: nowrap; overflow: hidden; background: #3b82f6; color: white; padding: 8px 0; font-size: 11px; font-weight: 800; text-transform: uppercase; }
-        .marquee-content { display: inline-block; animation: marquee 15s linear infinite; }
-        @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
-        .glass-bottom { background-color: rgba(255, 255, 255, 0.3); backdrop-filter: blur(25px) saturate(180%); -webkit-backdrop-filter: blur(25px) saturate(180%); border-top: 1px solid rgba(255,255,255,0.2); }
-        .dark-mode .glass-bottom { background-color: rgba(15, 23, 42, 0.3); }
-        .total-box { background-color: var(--total-bg); color: var(--total-text); border-radius: 1.25rem; padding: 0.75rem 1.5rem; border: 1px solid var(--border); }
-        .nav-line { background-color: var(--nav-icon); height: 2px; width: 24px; }
-        #full-cancel-screen { z-index: 3000; }
+        
+        .marquee { background: var(--accent); color: white; padding: 8px 0; font-weight: 800; text-transform: uppercase; overflow: hidden; }
+        .marquee-content { display: inline-block; animation: marquee 15s linear infinite; white-space: nowrap; }
+        @keyframes marquee { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
+
+        .glass-bottom { background: var(--glass); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,0.1); }
+        .snack-img { width: 90px; height: 110px; object-fit: cover; border-radius: 1.5rem; }
+        .pop-btn { transition: transform 0.1s; }
+        .pop-btn:active { transform: scale(0.95); }
     </style>
 </head>
 <body class="pb-64">
-    <div id="full-cancel-screen" class="fixed inset-0 bg-red-600 hidden flex flex-col items-center justify-center text-center p-10">
-        <h1 class="text-white text-7xl font-black italic uppercase mb-4">Order Canceled</h1>
-        <p class="text-red-200 text-xl font-bold mb-10">The staff could not fulfill your order at this time.</p>
-        <button onclick="location.reload()" class="bg-white text-red-600 px-12 py-5 rounded-2xl font-black uppercase shadow-2xl">Return to Store</button>
+    <div id="full-cancel-screen" class="fixed inset-0 bg-red-600 hidden flex flex-col items-center justify-center text-center z-[5000] p-10">
+        <h1 class="text-white text-7xl font-black italic uppercase">Canceled</h1>
+        <button onclick="location.reload()" class="mt-10 bg-white text-red-600 px-10 py-4 rounded-2xl font-black">TRY AGAIN</button>
     </div>
 
-    <div class="marquee" id="top-marquee"><div class="marquee-content" id="m-text">The Bag Campus Fuel • Beta v1.0 Live •</div></div>
+    <div class="marquee" id="top-marquee"><div class="marquee-content" id="m-text">THE BAG CAMPUS FUEL • BETA v1.0 •</div></div>
 
-    <div id="sidebar" class="fixed top-0 left-0 h-full w-80 shadow-2xl p-8 flex flex-col border-r">
-        <button onclick="toggleMenu(); playPop()" class="text-slate-400 font-black uppercase mb-8 text-left text-xs">✕ Close</button>
-        <div class="mb-10">
-            <h2 class="text-2xl font-black text-blue-600 italic uppercase mb-2">The Bag Team.</h2>
-            <p class="text-[15px] font-extrabold mb-8 leading-tight opacity-80">Campus lunch options were boring. We fixed it by delivering the snacks you actually want.</p>
-            <div class="space-y-3">
-                <div class="bg-blue-500/10 p-5 rounded-3xl border border-blue-500/20"><p class="text-[10px] font-black text-blue-600 uppercase">Founder</p><p class="text-xl font-black italic">Alon Katz</p></div>
-                <div class="bg-slate-500/10 p-5 rounded-3xl border border-slate-500/20"><p class="text-[10px] font-black text-slate-500 uppercase">Co-Founder</p><p class="text-xl font-black italic">Sean Raynes</p></div>
-            </div>
+    <div id="sidebar" class="fixed top-0 left-0 h-full w-80 shadow-2xl p-8 flex flex-col">
+        <button onclick="toggleMenu(); playPop()" class="font-black text-xs opacity-50 mb-10 text-left">✕ CLOSE</button>
+        <h2 class="text-2xl font-black italic mb-4" style="color:var(--accent)">THE BAG TEAM.</h2>
+        <p class="text-sm font-extrabold mb-8 leading-tight">Lunch was boring. We fixed it. We deliver premium snacks directly to you.</p>
+        <div class="space-y-4 mb-10">
+            <div class="p-4 rounded-2xl bg-slate-500/10"><p class="text-[10px] uppercase font-black opacity-50">Founder</p><p class="font-black italic">Alon Katz</p></div>
+            <div class="p-4 rounded-2xl bg-slate-500/10"><p class="text-[10px] uppercase font-black opacity-50">Co-Founder</p><p class="font-black italic">Sean Raynes</p></div>
+        </div>
+        <div class="mt-auto border-t pt-6 space-y-2">
+            <p class="text-[10px] font-black uppercase opacity-40">Promo Codes: COMING SOON</p>
+            <p class="text-[10px] font-black uppercase opacity-40">Rules: No orders in class. Cash ready.</p>
         </div>
     </div>
 
-    <nav class="bg-card p-4 border-b sticky top-0 z-50 flex items-center px-6">
-        <div class="w-1/3"><button onclick="toggleMenu(); playPop()" class="flex flex-col gap-1.5"><div class="nav-line"></div><div class="nav-line"></div><div class="nav-line"></div></button></div>
-        <div class="w-1/3 text-center"><h1 class="text-xl font-black text-blue-600 italic uppercase">The Bag.</h1><span class="text-[8px] font-black bg-blue-600 text-white px-2 py-0.5 rounded-full">BETA</span></div>
+    <nav class="bg-card p-4 sticky top-0 z-50 flex items-center px-6">
+        <div class="w-1/3"><button onclick="toggleMenu(); playPop()" class="space-y-1">
+            <div class="h-0.5 w-6" style="background:var(--accent)"></div><div class="h-0.5 w-6" style="background:var(--accent)"></div><div class="h-0.5 w-6" style="background:var(--accent)"></div>
+        </button></div>
+        <div class="w-1/3 text-center"><h1 class="text-xl font-black italic uppercase" style="color:var(--accent)">THE BAG.</h1></div>
         <div class="w-1/3 text-right"><button onclick="toggleDarkMode(); playPop()" class="text-xl">🌙</button></div>
     </nav>
 
     <main class="max-w-xl mx-auto p-6">
-        <div id="flash-timer-box" class="hidden mb-6 bg-red-600 p-8 rounded-[3rem] text-center text-white shadow-xl">
-            <p class="text-xs font-black uppercase tracking-widest opacity-80 mb-1">Flash Sale Ending</p>
+        <div id="flash-timer-box" class="hidden mb-6 bg-red-600 p-8 rounded-[3rem] text-center text-white">
+            <p class="text-xs font-black uppercase mb-1">Flash Sale Ending</p>
             <h2 id="timer-display" class="text-5xl font-black italic">00:00</h2>
         </div>
-        <div id="order-form">
-            <section class="bg-card p-6 rounded-[2.5rem] border mb-6 shadow-sm">
+
+        <div id="order-flow">
+            <section class="bg-card p-6 rounded-[2.5rem] mb-6">
                 <div class="grid grid-cols-2 gap-3 mb-4">
                     <input type="text" id="cust-name" placeholder="Name" class="bg-slate-500/10 p-4 rounded-2xl outline-none font-bold">
                     <input type="text" id="cust-grade" placeholder="Grade" class="bg-slate-500/10 p-4 rounded-2xl outline-none font-bold">
                 </div>
                 <div class="flex gap-2 p-1.5 bg-slate-500/10 rounded-2xl">
-                    <button onclick="setMethod('Pickup'); playPop()" id="btn-p" class="bg-blue-600 text-white flex-1 py-3 text-[10px] font-black uppercase rounded-xl">Pickup</button>
+                    <button onclick="setMethod('Pickup'); playPop()" id="btn-p" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl" style="background:var(--accent); color:white">Pickup</button>
                     <button onclick="setMethod('Delivery'); playPop()" id="btn-d" class="flex-1 py-3 text-[10px] font-black uppercase rounded-xl">Delivery (+15฿)</button>
                 </div>
             </section>
-            <div id="inventory" class="space-y-3"></div>
+            <div id="inventory" class="space-y-4"></div>
+        </div>
+
+        <div id="receipt" class="hidden text-center py-20 bg-card rounded-[3rem] border-4" style="border-color:var(--accent)">
+            <h2 class="text-5xl font-black uppercase italic" style="color:var(--accent)">SECURED.</h2>
+            <div class="mt-6 p-6">
+                <p class="text-xs font-black uppercase opacity-50">Estimated Wait Time</p>
+                <p id="wait-time" class="text-4xl font-black italic mt-2">-- mins</p>
+            </div>
+            <button onclick="location.reload()" class="mt-8 font-black uppercase text-xs underline">New Order</button>
         </div>
     </main>
 
     <div class="fixed bottom-0 left-0 right-0 p-6 glass-bottom z-50">
         <div class="max-w-xl mx-auto flex justify-between items-center">
-            <div class="total-box"><p class="text-[9px] font-black uppercase opacity-60">Total Paid</p><p class="text-xl font-black" id="total-val">0 THB</p></div>
-            <button onclick="submitOrder(); playPop()" class="bg-blue-600 text-white px-10 py-5 rounded-2xl font-black uppercase text-xs shadow-lg">Secure Bag</button>
+            <div class="p-4 bg-slate-500/10 rounded-2xl">
+                <p class="text-[9px] font-black uppercase opacity-60">Total Paid</p>
+                <p class="text-xl font-black" id="total-val" style="color:var(--accent)">0 THB</p>
+            </div>
+            <button onclick="submitOrder(); playPop()" class="px-10 py-5 rounded-2xl font-black uppercase text-xs shadow-lg text-white pop-btn" style="background:var(--accent)">Secure Bag</button>
         </div>
     </div>
     <audio id="pop-sfx" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3" preload="auto"></audio>
@@ -84,15 +103,20 @@
     <script>
         const firebaseConfig = { apiKey: "AIzaSyAFGoJyyvtspQSauHUrWvSBWNF2taGJOYE", databaseURL: "https://thebagsite-default-rtdb.asia-southeast1.firebasedatabase.app/", projectId: "thebagsite" };
         firebase.initializeApp(firebaseConfig); const db = firebase.database();
-        let cart = {}, stock = {}, isFlash = false, method = "Pickup";
-        const pop = document.getElementById('pop-sfx');
-        document.addEventListener('click', () => { pop.play().then(() => { pop.pause(); pop.currentTime = 0; }); }, { once: true });
-        function playPop() { pop.currentTime = 0; pop.play().catch(()=>{}); }
+        let cart = {}, stock = {}, isFlash = false, method = "Pickup", bestSeller = "";
+        const itemsData = {
+            squid_r: { name: "Red Squid", price: 15, img: "squid_r.png" },
+            lays_s: { name: "Lays Seaweed", price: 15, img: "lays_s.png" },
+            doritos: { name: "Doritos", price: 30, img: "doritos.png" }
+        };
+
+        function playPop() { const a = document.getElementById('pop-sfx'); a.currentTime = 0; a.play().catch(()=>{}); }
         function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
         function toggleDarkMode() { document.body.classList.toggle('dark-mode'); }
 
         db.ref('settings/flashSale').on('value', snap => {
             const data = snap.val() || {}; isFlash = data.active && data.end > Date.now();
+            document.body.classList.toggle('flash-active', isFlash);
             document.getElementById('flash-timer-box').classList.toggle('hidden', !isFlash);
             if(isFlash) { setInterval(() => {
                 const diff = data.end - Date.now();
@@ -103,29 +127,46 @@
 
         db.ref('stock').on('value', snap => {
             stock = snap.val() || {}; const container = document.getElementById('inventory'); container.innerHTML = "";
-            Object.keys(stock).forEach(id => {
-                const s = stock[id];
-                container.innerHTML += `<div class="bg-card p-4 rounded-[2rem] flex items-center justify-between border ${s <= 0 ? 'opacity-30 pointer-events-none' : ''}">
-                    <div class="flex flex-col">${s > 0 && s <= 2 ? `<span class="text-[8px] font-black text-red-500 uppercase">Only ${s} left!</span>` : ''}<h3 class="font-black text-sm uppercase italic">${id.replace(/_/g,' ')}</h3></div>
-                    <div class="flex items-center gap-3 bg-slate-500/10 p-1 rounded-xl">
-                        <button onclick="updateQty('${id}', -1); playPop()" class="w-8 h-8 font-black">-</button>
+            Object.keys(itemsData).forEach(id => {
+                const s = stock[id] || 0; const p = isFlash ? Math.floor(itemsData[id].price * 0.9) : itemsData[id].price;
+                container.innerHTML += `
+                <div class="bg-card p-4 rounded-[2.5rem] flex items-center gap-4 ${s <= 0 ? 'opacity-30 grayscale pointer-events-none' : ''}">
+                    <img src="${itemsData[id].img}" class="snack-img">
+                    <div class="flex-1">
+                        <div class="flex gap-2 mb-1">
+                            ${s <= 2 && s > 0 ? '<span class="bg-red-500 text-white text-[8px] px-2 py-0.5 rounded-full font-black animate-pulse">BUY NOW</span>' : ''}
+                            ${id === bestSeller ? '<span class="bg-blue-600 text-white text-[8px] px-2 py-0.5 rounded-full font-black uppercase">Popular</span>' : ''}
+                        </div>
+                        <h3 class="font-black text-sm uppercase italic">${itemsData[id].name}</h3>
+                        <p class="font-black" style="color:var(--accent)">${p}฿</p>
+                    </div>
+                    <div class="flex items-center gap-3 bg-slate-500/10 p-2 rounded-2xl">
+                        <button onclick="updateQty('${id}',-1);playPop()" class="w-8 h-8 font-black">-</button>
                         <span class="font-black">${cart[id] || 0}</span>
-                        <button onclick="updateQty('${id}', 1); playPop()" class="w-8 h-8 font-black">+</button>
-                    </div></div>`;
+                        <button onclick="updateQty('${id}',1);playPop()" class="w-8 h-8 font-black">+</button>
+                    </div>
+                </div>`;
             });
         });
 
         function updateQty(id, amt) {
             cart[id] = Math.max(0, Math.min(stock[id], (cart[id] || 0) + amt));
-            let total = (method === "Delivery" ? 15 : 0); Object.keys(cart).forEach(k => total += (cart[k] * 15));
-            document.getElementById('total-val').innerText = total + " THB";
+            let t = (method === "Delivery" ? 15 : 0);
+            Object.keys(cart).forEach(k => t += cart[k] * (isFlash ? Math.floor(itemsData[k].price * 0.9) : itemsData[k].price));
+            document.getElementById('total-val').innerText = t + " THB";
         }
 
         async function submitOrder() {
-            const name = document.getElementById('cust-name').value; if(!name) return alert("Name required");
-            const ref = await db.ref('orders').push({ name, status: 'active', timestamp: Date.now() });
-            db.ref('orders/' + ref.key).on('value', snap => { if(snap.val()?.status === 'cancelled') document.getElementById('full-cancel-screen').classList.remove('hidden'); });
+            const n = document.getElementById('cust-name').value; if(!n || Object.values(cart).every(v=>v===0)) return;
+            const snap = await db.ref('orders').once('value');
+            const activeCount = Object.values(snap.val() || {}).filter(o => o.status === 'active').length;
+            const wait = (activeCount * 3) + 5;
+            const ref = await db.ref('orders').push({ name: n, status: 'active', timestamp: Date.now() });
+            document.getElementById('order-flow').classList.add('hidden');
+            document.getElementById('receipt').classList.remove('hidden');
+            document.getElementById('wait-time').innerText = wait + " mins";
             confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+            db.ref('orders/'+ref.key).on('value', s => { if(s.val()?.status === 'cancelled') document.getElementById('full-cancel-screen').classList.remove('hidden'); });
         }
     </script>
 </body>
