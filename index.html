@@ -12,7 +12,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
         :root { --bg: #e0f7fa; --card: #ffffff; --text: #0f172a; --border: #cffafe; }
         .dark-mode { --bg: #020617; --card: #0f172a; --text: #f8fafc; --border: #1e293b; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text); transition: background 0.5s ease; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: var(--text); transition: all 0.5s ease; overflow-x: hidden; }
         .bg-card { background-color: var(--card); border-color: var(--border); }
         .blue-gradient { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
         .hidden { display: none !important; }
@@ -21,42 +21,43 @@
         #about-sidebar.open { transform: translateX(0); }
         .snack-img { width: 100px; height: 120px; object-fit: cover; border-radius: 1.5rem; background: #f1f5f9; }
         .dark-mode .snack-img { background: #1e293b; }
-        #inventory-container { max-height: 650px; overflow-y: auto; display: flex; flex-direction: column; gap: 1.25rem; scrollbar-width: none; }
-        @keyframes flash-border { 0% { border-color: #ef4444; } 50% { border-color: #fca5a5; } 100% { border-color: #ef4444; } }
-        .flash-active-card { animation: flash-border 1s infinite; border-width: 2px !important; }
-        .old-price { color: #94a3b8; text-decoration: line-through; font-size: 0.8em; margin-right: 4px; }
+        
+        /* DRAMATIC FLASH SALE */
+        @keyframes flash-glow { 0%, 100% { box-shadow: inset 0 0 50px rgba(239,68,68,0.2); } 50% { box-shadow: inset 0 0 100px rgba(239,68,68,0.5); } }
+        .flash-mode-active { animation: flash-glow 2s infinite; border: 4px solid #ef4444 !important; }
+        @keyframes float-emoji { 0% { transform: translateY(0) rotate(0); opacity:0; } 50% { opacity:1; } 100% { transform: translateY(-100vh) rotate(20deg); opacity:0; } }
+        .decor { position: fixed; font-size: 2rem; pointer-events: none; z-index: 0; animation: float-emoji 4s linear infinite; }
+        
         .method-btn { transition: all 0.2s; color: #94a3b8; font-weight: 800; }
         .method-btn.active { background: #3b82f6 !important; color: white !important; }
     </style>
 </head>
 <body class="pb-64">
 
+    <div id="flash-decorations" class="hidden">
+        <div class="decor" style="left:5%; animation-delay:0s">⚡</div>
+        <div class="decor" style="left:15%; animation-delay:2s">🔥</div>
+        <div class="decor" style="right:5%; animation-delay:1s">⚡</div>
+        <div class="decor" style="right:15%; animation-delay:3s">🔥</div>
+    </div>
+
     <audio id="pop-sound" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3" preload="auto"></audio>
-    <audio id="success-sound" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" preload="auto"></audio>
-    <audio id="error-sound" src="https://assets.mixkit.co/active_storage/sfx/2572/2572-preview.mp3" preload="auto"></audio>
     <audio id="flash-start-sound" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3" preload="auto"></audio>
 
     <div id="closed-screen" class="fixed inset-0 z-[1001] hidden flex items-center justify-center p-6 bg-slate-900 text-white text-center">
-        <div>
-            <h1 class="text-6xl font-black uppercase italic mb-4 text-red-500">Closed</h1>
-            <p class="text-xl font-bold mb-8">The Bag is currently resting.<br>Check back later!</p>
-        </div>
+        <div><h1 class="text-6xl font-black uppercase italic mb-4 text-red-500">Closed</h1><p class="text-xl font-bold">The Bag is resting. Check back later!</p></div>
     </div>
 
-    <div id="cancelled-screen" class="fixed inset-0 z-[999] hidden flex items-center justify-center p-6 bg-red-600 text-white text-center">
-        <div><h1 class="text-6xl font-black uppercase italic mb-4">Declined</h1><button onclick="location.reload()" class="bg-white text-red-600 px-12 py-5 rounded-2xl font-black uppercase shadow-2xl">Try Again</button></div>
-    </div>
     <div id="pending-screen" class="fixed inset-0 z-[800] hidden flex items-center justify-center p-6 bg-slate-900/95 backdrop-blur-md text-white text-center">
-        <div><div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div><h2 class="text-3xl font-black italic uppercase tracking-tighter">Securing Bag...</h2></div>
+        <div><div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div><h2 class="text-3xl font-black italic uppercase">Securing Bag...</h2></div>
     </div>
 
     <div id="about-sidebar" class="fixed top-0 left-0 h-full w-80 bg-white shadow-2xl p-8 flex flex-col text-slate-900">
         <button onclick="toggleMenu(); playPop()" class="text-slate-400 text-sm font-black uppercase mb-8 text-left">✕ Close</button>
         <div class="flex-1 overflow-y-auto">
             <h2 class="text-3xl font-black text-blue-600 italic uppercase mb-4">The Story.</h2>
-            <p class="text-slate-600 leading-relaxed mb-8 text-sm font-medium italic">The Bag Team founded this project to bring premium snacks directly to your classroom.</p>
             <div class="bg-gradient-to-br from-yellow-400 to-orange-500 p-6 rounded-[2rem] text-white shadow-lg mb-8">
-                <p class="text-[10px] font-black uppercase mb-1 opacity-90 tracking-widest">Rewards System</p>
+                <p class="text-[10px] font-black uppercase mb-1 opacity-90">Rewards System</p>
                 <h4 class="text-xl font-black italic uppercase">Promo Codes</h4>
                 <p class="text-[10px] font-bold mt-2 bg-black/10 inline-block px-2 py-1 rounded-lg uppercase tracking-widest">Coming Soon</p>
             </div>
@@ -69,15 +70,15 @@
 
     <nav class="bg-card backdrop-blur-md p-4 border-b sticky top-0 z-50 flex items-center px-6">
         <div class="w-1/3"><button onclick="toggleMenu(); playPop()" class="p-2 flex flex-col gap-1.5"><div class="w-6 h-0.5 bg-blue-600"></div><div class="w-6 h-0.5 bg-blue-600"></div></button></div>
-        <div class="w-1/3 text-center flex items-center justify-center gap-2"><img src="logo.png" class="h-6 w-6 object-contain"><h1 class="text-xl font-black text-blue-600 italic uppercase">The Bag.</h1></div>
+        <div class="w-1/3 text-center flex items-center justify-center gap-2"><img src="logo.png" class="h-6 w-6"><h1 class="text-xl font-black text-blue-600 italic uppercase">The Bag.</h1></div>
         <div class="w-1/3 text-right"><button onclick="toggleDarkMode(); playPop()" class="p-2 bg-slate-500/10 rounded-xl">🌙</button></div>
     </nav>
 
-    <main class="max-w-2xl mx-auto p-6 relative">
+    <main class="max-w-2xl mx-auto p-6 relative z-10">
         <div id="order-flow">
-            <div id="flash-banner" class="hidden bg-red-600 text-white p-8 rounded-[2.5rem] mb-8 flex justify-between items-center shadow-xl border-4 border-white">
-                <div><h2 class="text-3xl font-black italic uppercase">10% OFF!</h2><p class="text-xs font-bold opacity-80">Flash Sale Activated</p></div>
-                <div class="text-right bg-white/20 p-4 rounded-3xl"><p id="flash-timer" class="text-2xl font-black font-mono">00:00</p></div>
+            <div id="flash-banner" class="hidden bg-red-600 text-white p-8 rounded-[2.5rem] mb-8 flex justify-between items-center shadow-2xl border-4 border-white animate-bounce">
+                <div><h2 class="text-3xl font-black italic uppercase">10% OFF!</h2><p class="text-xs font-bold opacity-80 uppercase tracking-widest">Flash Sale Live</p></div>
+                <div class="text-right bg-black/20 p-4 rounded-3xl"><p id="flash-timer" class="text-2xl font-black font-mono">00:00</p></div>
             </div>
 
             <section class="bg-card p-8 rounded-[2.5rem] shadow-sm border mb-8">
@@ -93,19 +94,19 @@
             <div id="inventory-container"></div>
         </div>
 
-        <div id="receipt-page" class="hidden">
-            <div class="bg-card rounded-[3.5rem] shadow-2xl border-4 border-blue-600 p-12 text-center">
-                <h2 class="text-4xl font-black uppercase italic text-blue-600">Bag Secured!</h2>
-                <p id="receipt-items" class="mt-6 font-bold text-[var(--text)]"></p>
-                <div id="receipt-total" class="text-4xl font-black mt-4 text-blue-600"></div>
-                <button onclick="location.reload(); playPop()" class="mt-8 text-blue-600 font-black uppercase text-xs underline">New Order</button>
-            </div>
+        <div id="receipt-page" class="hidden text-center p-12 bg-card rounded-[3rem] border-4 border-blue-600">
+            <h2 class="text-4xl font-black uppercase italic text-blue-600">Bag Secured!</h2>
+            <p id="receipt-total" class="text-4xl font-black mt-4 text-blue-600"></p>
+            <button onclick="location.reload()" class="mt-8 text-blue-600 font-black uppercase text-xs underline">New Order</button>
         </div>
     </main>
 
     <div id="bottom-bar" class="fixed bottom-0 left-0 right-0 bg-card/90 backdrop-blur-xl p-8 border-t z-50">
         <div class="max-w-2xl mx-auto flex justify-between items-center">
-            <p class="text-3xl font-black text-blue-600" id="total-display">0 THB</p>
+            <div class="bg-slate-900 text-white px-6 py-3 rounded-2xl">
+                <p class="text-[10px] font-black uppercase opacity-50">Total</p>
+                <p class="text-2xl font-black text-blue-400" id="total-display">0 THB</p>
+            </div>
             <button onclick="showRules(); playPop()" class="blue-gradient text-white px-12 py-5 rounded-[1.5rem] font-black uppercase text-xs shadow-xl">Secure Bag</button>
         </div>
     </div>
@@ -145,26 +146,38 @@
             gum: { name: "Chewing Gum", price: 30, img: "gum.png" }
         };
 
-        let cart = {}, stock = {}, method = "Pickup", deliveryFee = 0, isFlash = false;
+        let cart = {}, stock = {}, method = "Pickup", deliveryFee = 0, isFlash = false, flashEnd = 0;
 
         function playPop() { document.getElementById('pop-sound').play().catch(()=>{}); }
         function toggleMenu() { document.getElementById('about-sidebar').classList.toggle('open'); }
         function toggleDarkMode() { document.body.classList.toggle('dark-mode'); }
         function showRules() { document.getElementById('rules-modal').classList.remove('hidden'); }
 
-        // STORE STATUS
-        db.ref('settings/storeOpen').on('value', snap => {
-            document.getElementById('closed-screen').classList.toggle('hidden', snap.val() !== false);
-        });
+        db.ref('settings/storeOpen').on('value', snap => { document.getElementById('closed-screen').classList.toggle('hidden', snap.val() !== false); });
 
-        // FLASH SALE
         db.ref('settings/flashSale').on('value', snap => {
             const data = snap.val() || { active: false, end: 0 };
             isFlash = data.active && data.end > Date.now();
-            if (isFlash) document.getElementById('flash-start-sound').play().catch(()=>{});
+            flashEnd = data.end;
+            if (isFlash) {
+                document.getElementById('flash-start-sound').play().catch(()=>{});
+                document.body.classList.add('flash-mode-active');
+                document.getElementById('flash-decorations').classList.remove('hidden');
+            } else {
+                document.body.classList.remove('flash-mode-active');
+                document.getElementById('flash-decorations').classList.add('hidden');
+            }
             document.getElementById('flash-banner').classList.toggle('hidden', !isFlash);
             renderInventory(); updateCartDisplay();
         });
+
+        setInterval(() => {
+            if(!isFlash) return;
+            const rem = flashEnd - Date.now();
+            if(rem <= 0) { isFlash = false; document.getElementById('flash-banner').classList.add('hidden'); return; }
+            const m = Math.floor(rem/60000); const s = Math.floor((rem%60000)/1000);
+            document.getElementById('flash-timer').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
+        }, 1000);
 
         db.ref('stock').on('value', snap => { stock = snap.val() || {}; renderInventory(); });
 
@@ -175,16 +188,14 @@
                 const item = itemsData[id]; const s = stock[id] || 0;
                 const price = isFlash ? Math.floor(item.price * 0.9) : item.price;
                 container.innerHTML += `
-                <div class="bg-card p-4 rounded-[2rem] flex gap-4 border ${s <= 0 ? 'sold-out' : ''} ${isFlash ? 'flash-active-card' : ''}">
+                <div class="bg-card p-4 rounded-[2rem] flex gap-4 border ${s <= 0 ? 'sold-out' : ''}">
                     <img src="${item.img}" class="snack-img">
                     <div class="flex-1">
-                        <div class="flex justify-between items-start">
-                            <h3 class="font-black text-sm text-[var(--text)]">${item.name}</h3>
-                        </div>
+                        <h3 class="font-black text-sm text-[var(--text)]">${item.name}</h3>
                         <div class="flex items-center justify-between mt-4">
                             <div>
                                 <span class="text-blue-600 font-black block">${isFlash ? `<span class="old-price">${item.price}฿</span>` : ''}${price}฿</span>
-                                <span class="text-[9px] font-black uppercase tracking-widest ${s > 0 ? 'text-slate-400' : 'text-red-500'}">Stock: ${s}</span>
+                                <span class="text-[9px] font-black uppercase text-slate-400">Stock: ${s}</span>
                             </div>
                             <div class="flex items-center gap-3 bg-slate-500/10 p-1 rounded-xl">
                                 <button onclick="updateQty('${id}', -1); playPop()" class="w-8 h-8 font-black">-</button>
@@ -213,24 +224,18 @@
 
         async function submitOrder() {
             const itemsArr = []; for(let id in cart) if(cart[id] > 0) itemsArr.push(`${itemsData[id].name} x${cart[id]}`);
-            if(!document.getElementById('cust-name').value || itemsArr.length === 0) return alert("Fill in details!");
+            if(!document.getElementById('cust-name').value || itemsArr.length === 0) return alert("Details missing!");
             const ref = await db.ref('orders').push({ name: document.getElementById('cust-name').value, grade: document.getElementById('cust-grade').value, items: itemsArr.join(', '), status: 'pending', timestamp: Date.now(), total: updateCartDisplay() });
             document.getElementById('rules-modal').classList.add('hidden');
             document.getElementById('pending-screen').classList.remove('hidden');
             db.ref('orders/' + ref.key).on('value', snap => {
-                const o = snap.val();
-                if (o?.status === 'active') {
+                if (snap.val()?.status === 'active') {
                     document.getElementById('pending-screen').classList.add('hidden');
                     document.getElementById('order-flow').classList.add('hidden');
                     document.getElementById('bottom-bar').classList.add('hidden');
                     document.getElementById('receipt-page').classList.remove('hidden');
-                    document.getElementById('receipt-items').innerText = o.items;
-                    document.getElementById('receipt-total').innerText = o.total + "฿";
-                    document.getElementById('success-sound').play(); confetti();
-                } else if (o?.status === 'cancelled') {
-                    document.getElementById('pending-screen').classList.add('hidden');
-                    document.getElementById('cancelled-screen').classList.remove('hidden');
-                    document.getElementById('error-sound').play();
+                    document.getElementById('receipt-total').innerText = snap.val().total + "฿";
+                    confetti();
                 }
             });
         }
