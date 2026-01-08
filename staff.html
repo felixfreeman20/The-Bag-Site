@@ -35,7 +35,7 @@
                 <h2 class="text-[10px] font-black uppercase text-blue-400 mb-6">Inventory Control</h2>
                 <div id="stock-manager" class="space-y-3 mb-6"></div>
                 <button onclick="saveStock()" class="w-full bg-blue-600 py-4 rounded-2xl font-black text-xs uppercase shadow-lg active:scale-95 transition-all">Save Supply</button>
-                <button onclick="resetBank()" class="w-full mt-6 text-[9px] text-slate-600 font-bold uppercase tracking-widest hover:text-red-400 transition-colors">Reset Bank Revenue</button>
+                <button onclick="resetBank()" class="w-full mt-6 text-[9px] text-slate-600 font-bold uppercase tracking-widest hover:text-red-400 transition-colors">Reset Bank Revenue & Top Sellers</button>
             </div>
         </div>
     </main>
@@ -44,6 +44,7 @@
         const firebaseConfig = { apiKey: "AIzaSyAFGoJyyvtspQSauHUrWvSBWNF2taGJOYE", databaseURL: "https://thebagsite-default-rtdb.asia-southeast1.firebasedatabase.app/", projectId: "thebagsite" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+        
         const itemIds = ['squid_l', 'doritos', 'squid_g', 'squid_o', 'squid_r', 'pocky', 'oreo', 'lays_s', 'lays_n', 'gummy', 'gum'];
         let lastCount = -1;
 
@@ -57,7 +58,6 @@
             const list = document.getElementById('order-list'); list.innerHTML = "";
             keys.reverse().forEach(id => {
                 const o = orders[id];
-                // SPLIT NAME LOGIC
                 const nameParts = o.name.split(' ');
                 const firstName = nameParts[0];
                 const lastName = nameParts.slice(1).join(' ');
@@ -101,7 +101,12 @@
             setTimeout(() => { db.ref('orders/' + id).remove(); }, 10000);
         }
 
-        function resetBank() { if(confirm("Clear banked revenue?")) db.ref('lifetime_revenue').set(0); }
+        function resetBank() { 
+            if(confirm("Clear banked revenue AND reset Top Seller stats?")) {
+                db.ref('lifetime_revenue').set(0); 
+                db.ref('sales_counts').remove(); // RESETS THE BADGE LOGIC
+            }
+        }
 
         db.ref('stock').on('value', snap => {
             const s = snap.val() || {}; const m = document.getElementById('stock-manager'); m.innerHTML = "";
