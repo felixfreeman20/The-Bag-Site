@@ -83,16 +83,22 @@
             db.ref('settings/flashSale').set({ active: true, end: Date.now() + (mins * 60000) });
         }
 
+        function copyId(id) {
+            navigator.clipboard.writeText(id);
+            alert("ID Copied to Clipboard!");
+        }
+
         db.ref('orders').on('value', snap => {
             const list = document.getElementById('order-list');
             list.innerHTML = "";
             const orders = snap.val() || {};
             Object.keys(orders).reverse().forEach(id => {
                 if(orders[id].status === 'active') {
+                    const devId = orders[id].deviceId || 'Unknown';
                     list.innerHTML += `
                     <div class="panel-card p-6 flex justify-between items-center">
                         <div>
-                            <p class="text-[10px] font-black text-red-400 uppercase">ID: ${orders[id].deviceId || 'Unknown'}</p>
+                            <button onclick="copyId('${devId}')" class="text-[10px] font-black bg-red-900/30 text-red-400 px-3 py-1 rounded-full uppercase mb-2 hover:bg-red-400 hover:text-white transition-all">Copy Device ID</button>
                             <h3 class="text-2xl font-black italic">${orders[id].name}</h3>
                             <p class="text-sm font-bold opacity-70">${orders[id].items}</p>
                         </div>
