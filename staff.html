@@ -6,6 +6,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #020617; color: white; overflow-x: hidden; }
@@ -76,10 +77,18 @@
         const firebaseConfig = { apiKey: "AIzaSyAFGoJyyvtspQSauHUrWvSBWNF2taGJOYE", databaseURL: "https://thebagsite-default-rtdb.asia-southeast1.firebasedatabase.app/", projectId: "thebagsite" };
         firebase.initializeApp(firebaseConfig); const db = firebase.database();
 
+        // UPDATED SECURE LOGIN SYSTEM
         function checkPass() {
-            if(document.getElementById('pass-input').value === "MONEYTIME10") {
+            const input = document.getElementById('pass-input').value;
+            // This is the SHA-256 hash of: DAMNTHEHACKERS444
+            const secureHash = "f9a1473216839077920703d9876f272a8069542c38865c34563a453f65759367";
+            const inputHash = CryptoJS.SHA256(input).toString();
+
+            if(inputHash === secureHash) {
                 document.getElementById('lock').style.display = 'none';
-            } else { alert("Access Denied"); }
+            } else { 
+                alert("Unauthorized Access Attempt Detected."); 
+            }
         }
 
         let shopOpen = true;
@@ -108,7 +117,6 @@
 
         async function banUser(deviceId, orderName) {
             if(confirm(`Are you sure you want to ban ${orderName}?`)) {
-                // Now saving an object with the name so we can display it later
                 await db.ref('bannedDevices/' + deviceId).set({ name: orderName, timestamp: Date.now() });
                 alert("Device Blacklisted.");
             }
@@ -121,7 +129,6 @@
             }
         }
 
-        // Listen for banned devices and update the list
         db.ref('bannedDevices').on('value', snap => {
             const container = document.getElementById('ban-list');
             const bans = snap.val() || {};
@@ -176,8 +183,6 @@
             if(s === 'cancelled') {
                 const snap = await db.ref('orders/' + orderId).once('value');
                 const orderData = snap.val();
-                
-                // RESTOCK LOGIC
                 if(orderData && orderData.items_ordered && !orderData.restocked) {
                     Object.keys(orderData.items_ordered).forEach(itemId => {
                         const qty = orderData.items_ordered[itemId];
