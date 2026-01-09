@@ -28,10 +28,15 @@
         .pop-btn { transition: transform 0.1s; }
         .pop-btn:active { transform: scale(0.95); }
         
-        #closed-screen { z-index: 9999; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+        #closed-screen, #banned-screen { z-index: 9999; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
     </style>
 </head>
 <body class="pb-64">
+    <div id="banned-screen" class="fixed inset-0 bg-red-950 hidden flex flex-col items-center justify-center text-center p-10">
+        <h1 class="text-white text-6xl font-black italic uppercase">BANNED</h1>
+        <p class="text-slate-400 font-bold mt-4 uppercase tracking-widest">Device blacklisted for trolling.</p>
+    </div>
+
     <div id="closed-screen" class="fixed inset-0 bg-slate-900/80 hidden flex flex-col items-center justify-center text-center p-10">
         <h1 class="text-white text-6xl font-black italic uppercase">Shop Closed</h1>
         <p class="text-slate-400 font-bold mt-4 uppercase tracking-widest">We are currently restockin' or takin' a break.</p>
@@ -158,6 +163,26 @@
     <audio id="pop-sfx" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3" preload="auto"></audio>
 
     <script>
+        // BAN SYSTEM CONFIG
+        const getDeviceId = () => {
+            const nav = window.navigator;
+            const screen = window.screen;
+            return btoa(`${nav.userAgent}-${screen.width}x${screen.height}-${nav.language}`);
+        };
+        const deviceId = getDeviceId();
+        
+        // PASTE TROLL IDs IN THIS LIST
+        const bannedDevices = ["EXAMPLE_ID_HERE"]; 
+
+        if (bannedDevices.includes(deviceId)) {
+            window.stop();
+            document.body.innerHTML = ""; 
+            setTimeout(() => {
+                document.body.innerHTML = document.getElementById('banned-screen').outerHTML;
+                document.getElementById('banned-screen').classList.remove('hidden');
+            }, 100);
+        }
+
         const firebaseConfig = { apiKey: "AIzaSyAFGoJyyvtspQSauHUrWvSBWNF2taGJOYE", databaseURL: "https://thebagsite-default-rtdb.asia-southeast1.firebasedatabase.app/", projectId: "thebagsite" };
         firebase.initializeApp(firebaseConfig); const db = firebase.database();
         
@@ -214,11 +239,11 @@
                     const diff = data.end - Date.now();
                     if(diff <= 0) { 
                         clearInterval(flashInterval); 
-                        isFlash = false; // Reset flash state
-                        document.body.classList.remove('flash-active'); // Revert UI color
+                        isFlash = false;
+                        document.body.classList.remove('flash-active'); 
                         document.getElementById('flash-timer-box').classList.add('hidden'); 
                         document.getElementById('total-sale-tag').classList.add('hidden');
-                        renderInventory(); updateCartDisplay(); // Refresh prices
+                        renderInventory(); updateCartDisplay();
                         return; 
                     }
                     const m = Math.floor(diff/60000), s = Math.floor((diff%60000)/1000);
@@ -284,33 +309,16 @@
 
         async function submitOrder() {
             const n = document.getElementById('cust-name').value;
-            const loc = document.getElementById('cust-loc').value;
             const itemsInCart = Object.keys(cart).filter(k=>cart[k]>0);
-            
             if(!n || itemsInCart.length === 0) return alert("Add items and name!");
-            if(method === 'Delivery' && !loc) return alert("Please enter your delivery location!");
-            
-            // Show rules
-            const rulesScreen = document.getElementById('rules-screen');
-            const confirmBtn = document.getElementById('rules-confirm-btn');
-            rulesScreen.classList.remove('hidden');
-            
-            // Start Timer
+            document.getElementById('rules-screen').classList.remove('hidden');
             let timeLeft = 3;
+            const confirmBtn = document.getElementById('rules-confirm-btn');
             confirmBtn.disabled = true;
-            confirmBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            confirmBtn.innerText = `Wait (${timeLeft}s)`;
-            
             const timer = setInterval(() => {
                 timeLeft--;
-                if(timeLeft > 0) {
-                    confirmBtn.innerText = `Wait (${timeLeft}s)`;
-                } else {
-                    clearInterval(timer);
-                    confirmBtn.innerText = "I Agree, Place Order";
-                    confirmBtn.disabled = false;
-                    confirmBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                }
+                if(timeLeft > 0) confirmBtn.innerText = `Wait (${timeLeft}s)`;
+                else { clearInterval(timer); confirmBtn.innerText = "I Agree, Place Order"; confirmBtn.disabled = false; confirmBtn.classList.remove('opacity-50'); }
             }, 1000);
         }
 
@@ -336,11 +344,11 @@
                 items: itemsInCart.map(k=>`${itemsData[k].name} x${cart[k]}`).join(', '),
                 items_list: itemsListForBestSeller,
                 status: 'active', timestamp: Date.now(), location: method,
-                delivery_loc: method === 'Delivery' ? loc : 'Pickup Spot'
+                delivery_loc: method === 'Delivery' ? loc : 'Pickup Spot',
+                deviceId: deviceId // LOGGING THE ID FOR BANNING
             };
 
             const ref = await db.ref('orders').push(orderData);
-            
             document.getElementById('order-flow').classList.add('hidden');
             document.getElementById('bottom-bar').classList.add('hidden'); 
             document.getElementById('receipt').classList.remove('hidden');
@@ -350,11 +358,6 @@
             db.ref('orders/'+ref.key).on('value', s => { 
                 const data = s.val();
                 if(data?.status === 'cancelled') {
-                    if(data.items_list) {
-                        data.items_list.forEach(itemId => {
-                            db.ref('stock/' + itemId).transaction(curr => (curr || 0) + 1);
-                        });
-                    }
                     document.getElementById('full-cancel-screen').classList.remove('hidden'); 
                 }
             });
