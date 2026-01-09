@@ -28,10 +28,22 @@
         .pop-btn { transition: transform 0.1s; }
         .pop-btn:active { transform: scale(0.95); }
         
-        #closed-screen, #banned-screen { z-index: 9999; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+        #closed-screen, #banned-screen, #security-screen { z-index: 9999; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
     </style>
 </head>
 <body class="pb-64">
+    <div id="security-screen" class="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center text-center p-10">
+        <div class="mb-6 w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center">
+            <span class="text-3xl">🔒</span>
+        </div>
+        <h1 class="text-white text-4xl font-black italic uppercase mb-2">Private Access</h1>
+        <p class="text-slate-400 font-bold mb-8 uppercase tracking-widest text-xs">Enter beta access code to enter THE BAG.</p>
+        <div class="w-full max-w-xs space-y-4">
+            <input type="password" id="access-code" placeholder="••••••••" class="w-full bg-slate-900 border border-slate-800 text-white p-5 rounded-2xl text-center font-black tracking-widest focus:outline-none focus:border-blue-500 transition-all">
+            <button onclick="checkAccess()" class="w-full bg-blue-600 text-white p-5 rounded-2xl font-black uppercase tracking-widest hover:bg-blue-500 transition-all">Unlock Shop</button>
+        </div>
+    </div>
+
     <div id="banned-screen" class="fixed inset-0 bg-red-950 hidden flex flex-col items-center justify-center text-center p-10">
         <h1 class="text-white text-6xl font-black italic uppercase">BANNED</h1>
         <p class="text-slate-400 font-bold mt-4 uppercase tracking-widest">Device blacklisted for trolling.</p>
@@ -165,6 +177,17 @@
     <script>
         const firebaseConfig = { apiKey: "AIzaSyAFGoJyyvtspQSauHUrWvSBWNF2taGJOYE", databaseURL: "https://thebagsite-default-rtdb.asia-southeast1.firebasedatabase.app/", projectId: "thebagsite" };
         firebase.initializeApp(firebaseConfig); const db = firebase.database();
+
+        // SECURITY CODE LOGIC
+        function checkAccess() {
+            const input = document.getElementById('access-code').value;
+            if (input === "BETATESTER10") {
+                document.getElementById('security-screen').classList.add('hidden');
+                playPop();
+            } else {
+                alert("Incorrect Access Code.");
+            }
+        }
 
         // BAN SYSTEM LOGIC
         const getDeviceId = () => {
