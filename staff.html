@@ -44,9 +44,12 @@
             <div class="lg:col-span-5 space-y-8">
                 <div class="panel-card p-8 border-l-8 border-red-600">
                     <h2 class="text-xl font-black uppercase italic text-red-500 mb-4">Flash Sale</h2>
-                    <div class="flex gap-4">
-                        <input type="number" id="flash-mins" placeholder="Mins" class="w-24 bg-slate-900 p-4 rounded-xl font-bold border border-slate-700">
-                        <button onclick="startFlash()" class="flex-1 bg-red-600 p-4 rounded-xl font-black uppercase text-xs">Start Sale</button>
+                    <div class="flex flex-col gap-3">
+                        <div class="flex gap-4">
+                            <input type="number" id="flash-mins" placeholder="Mins" class="w-24 bg-slate-900 p-4 rounded-xl font-bold border border-slate-700">
+                            <button onclick="startFlash()" class="flex-1 bg-red-600 p-4 rounded-xl font-black uppercase text-xs">Start Sale</button>
+                        </div>
+                        <button onclick="endFlash()" class="w-full bg-slate-700 p-3 rounded-xl font-black uppercase text-[10px] opacity-70 hover:opacity-100 transition-all">End Flash Sale</button>
                     </div>
                 </div>
 
@@ -83,9 +86,21 @@
             db.ref('settings/flashSale').set({ active: true, end: Date.now() + (mins * 60000) });
         }
 
+        function endFlash() {
+            db.ref('settings/flashSale').update({ active: false, end: 0 });
+            alert("Flash Sale Ended");
+        }
+
         function copyId(id) {
             navigator.clipboard.writeText(id);
             alert("ID Copied to Clipboard!");
+        }
+
+        async function banUser(deviceId, orderName) {
+            if(confirm(`Are you sure you want to ban ${orderName}?`)) {
+                await db.ref('bannedDevices/' + deviceId).set(true);
+                alert("Device Blacklisted.");
+            }
         }
 
         db.ref('orders').on('value', snap => {
@@ -97,8 +112,11 @@
                     const devId = orders[id].deviceId || 'Unknown';
                     list.innerHTML += `
                     <div class="panel-card p-6 flex justify-between items-center">
-                        <div>
-                            <button onclick="copyId('${devId}')" class="text-[10px] font-black bg-red-900/30 text-red-400 px-3 py-1 rounded-full uppercase mb-2 hover:bg-red-400 hover:text-white transition-all">Copy Device ID</button>
+                        <div class="flex-1">
+                            <div class="flex gap-2 mb-2">
+                                <button onclick="copyId('${devId}')" class="text-[9px] font-black bg-blue-900/30 text-blue-400 px-3 py-1 rounded-full uppercase hover:bg-blue-400 hover:text-white transition-all">ID</button>
+                                <button onclick="banUser('${devId}', '${orders[id].name}')" class="text-[9px] font-black bg-red-900 text-white px-3 py-1 rounded-full uppercase hover:bg-red-600 transition-all">BAN DEVICE</button>
+                            </div>
                             <h3 class="text-2xl font-black italic">${orders[id].name}</h3>
                             <p class="text-sm font-bold opacity-70">${orders[id].items}</p>
                         </div>
@@ -110,7 +128,23 @@
                 }
             });
         });
-        function updateStatus(id, s) { db.ref('orders/'+id).update({ status: s }); }
+
+        async function updateStatus(orderId, s) { 
+            if(s === 'cancelled') {
+                const snap = await db.ref('orders/' + orderId).once('value');
+                const orderData = snap.val();
+                
+                // RESTOCK LOGIC
+                if(orderData && orderData.items_ordered && !orderData.restocked) {
+                    Object.keys(orderData.items_ordered).forEach(itemId => {
+                        const qty = orderData.items_ordered[itemId];
+                        db.ref('stock/' + itemId).transaction(curr => (curr || 0) + qty);
+                    });
+                    db.ref('orders/' + orderId).update({ restocked: true });
+                }
+            }
+            db.ref('orders/' + orderId).update({ status: s }); 
+        }
 
         const items = ['squid_l_red', 'squid_l_orange', 'squid_g', 'squid_o', 'squid_r', 'doritos', 'pocky', 'oreo', 'lays_s', 'lays_n', 'gummy', 'gum'];
         
@@ -120,22 +154,39 @@
             list.innerHTML = "";
             items.forEach(id => {
                 const count = data[id] || 0;
+                const isOut = count <= 0;
                 list.innerHTML += `
                 <div class="flex items-center justify-between bg-slate-900/40 p-3 rounded-xl">
-                    <span class="font-bold text-[10px] uppercase opacity-70">${id}</span>
-                    <input type="number" id="manual-${id}" placeholder="${count}" class="w-12 bg-transparent text-center font-black text-blue-500 outline-none">
+                    <span class="font-bold text-[10px] uppercase ${isOut ? 'text-red-500 opacity-100' : 'opacity-70'}">${id} ${isOut ? '(OUT)' : ''}</span>
+                    <div class="flex items-center gap-3">
+                        <button onclick="quickAdjust('${id}', -1)" class="w-8 h-8 rounded-lg bg-slate-800 font-black text-red-500">-</button>
+                        <input type="number" id="manual-${id}" placeholder="${count}" class="w-12 bg-transparent text-center font-black text-blue-500 outline-none">
+                        <button onclick="quickAdjust('${id}', 1)" class="w-8 h-8 rounded-lg bg-slate-800 font-black text-green-500">+</button>
+                    </div>
                 </div>`;
             });
         });
 
+        function quickAdjust(id, amt) {
+            db.ref('stock/'+id).transaction(current => {
+                return Math.max(0, (current || 0) + amt);
+            });
+        }
+
         function updateAllStock() {
             const updates = {};
             items.forEach(id => {
-                const val = document.getElementById(`manual-${id}`).value;
-                if(val !== "") updates[id] = parseInt(val);
+                const input = document.getElementById(`manual-${id}`);
+                const val = input.value;
+                if(val !== "") {
+                    updates[id] = parseInt(val);
+                    input.value = ""; 
+                }
             });
-            db.ref('stock').update(updates);
-            alert("Stock Updated!");
+            if (Object.keys(updates).length > 0) {
+                db.ref('stock').update(updates);
+                alert("Stock Updated!");
+            }
         }
     </script>
 </body>
