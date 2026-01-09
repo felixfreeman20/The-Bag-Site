@@ -82,6 +82,9 @@
                     <input type="text" id="cust-name" placeholder="Name" class="bg-slate-500/10 p-4 rounded-2xl outline-none font-bold">
                     <input type="text" id="cust-grade" placeholder="Grade" class="bg-slate-500/10 p-4 rounded-2xl outline-none font-bold">
                 </div>
+                <div id="delivery-info" class="hidden mb-4 animate-slide-down">
+                    <input type="text" id="cust-loc" placeholder="Delivery Location (e.g. Building A, Room 302)" class="w-full bg-slate-500/10 p-4 rounded-2xl outline-none font-bold text-sm">
+                </div>
                 <div class="flex gap-2 p-1.5 bg-slate-500/10 rounded-2xl">
                     <button onclick="setMethod('Pickup'); playPop()" id="btn-p" class="flex-1 py-4 text-[10px] font-black uppercase rounded-xl" style="background:var(--accent); color:white">Pickup</button>
                     <button onclick="setMethod('Delivery'); playPop()" id="btn-d" class="flex-1 py-4 text-[10px] font-black uppercase rounded-xl">Delivery (+15฿)</button>
@@ -108,6 +111,7 @@
                         <li>• Prepare exact cash for faster checkout.</li>
                         <li>• No class orders: Meet at the designated spot.</li>
                         <li>• If delivery, stay near your phone for the call.</li>
+                        <li class="pt-2 text-blue-500">• Promo Codes: Coming Soon!</li>
                     </ul>
                 </div>
 
@@ -195,7 +199,6 @@
             renderInventory(); updateCartDisplay();
         });
 
-        // FIXED: This now ensures the student side watches the database stock
         db.ref('stock').on('value', snap => { 
             stock = snap.val() || {}; 
             renderInventory(); 
@@ -213,7 +216,7 @@
                     <div class="flex-1">
                         <div class="flex gap-2 mb-1">
                             ${s <= 2 && s > 0 ? '<span class="bg-red-500 text-white text-[8px] px-2 py-0.5 rounded-full font-black animate-bounce">Only '+s+' left</span>' : ''}
-                            ${id === bestSellerId ? '<span class="bg-blue-600 text-white text-[8px] px-2 py-0.5 rounded-full font-black uppercase">Popular</span>' : ''}
+                            ${id === bestSellerId ? '<span class="bg-orange-500 text-white text-[8px] px-2 py-0.5 rounded-full font-black uppercase">Popular</span>' : ''}
                         </div>
                         <h3 class="font-black text-sm uppercase italic">${itemsData[id].name}</h3>
                         <div class="flex items-center gap-2"><p class="font-black text-lg" style="color:var(--accent)">${p}฿</p></div>
@@ -245,34 +248,58 @@
             document.getElementById('btn-p').style.color = m === 'Pickup' ? 'white' : 'inherit';
             document.getElementById('btn-d').style.background = m === 'Delivery' ? 'var(--accent)' : 'transparent';
             document.getElementById('btn-d').style.color = m === 'Delivery' ? 'white' : 'inherit';
+            document.getElementById('delivery-info').classList.toggle('hidden', m === 'Pickup');
             updateCartDisplay();
         }
 
         async function submitOrder() {
             const n = document.getElementById('cust-name').value;
+            const loc = document.getElementById('cust-loc').value;
             const itemsInCart = Object.keys(cart).filter(k=>cart[k]>0);
+            
             if(!n || itemsInCart.length === 0) return alert("Add items and name!");
+            if(method === 'Delivery' && !loc) return alert("Please enter your delivery location!");
+
             const snap = await db.ref('orders').once('value');
             const active = Object.values(snap.val() || {}).filter(o => o.status === 'active').length;
             const wait = (active * 3) + 5;
             const itemsListForBestSeller = [];
+            
             itemsInCart.forEach(id => {
                 const qty = cart[id];
                 for(let i=0; i<qty; i++) itemsListForBestSeller.push(id);
                 db.ref('stock/'+id).transaction(current => (current || 0) - qty);
             });
-            const ref = await db.ref('orders').push({ 
+
+            const orderData = { 
                 name: n, grade: document.getElementById('cust-grade').value, 
                 items: itemsInCart.map(k=>`${itemsData[k].name} x${cart[k]}`).join(', '),
                 items_list: itemsListForBestSeller,
-                status: 'active', timestamp: Date.now(), location: method
-            });
+                status: 'active', timestamp: Date.now(), location: method,
+                delivery_loc: method === 'Delivery' ? loc : 'Pickup Spot'
+            };
+
+            const ref = await db.ref('orders').push(orderData);
+            
             document.getElementById('order-flow').classList.add('hidden');
             document.getElementById('bottom-bar').classList.add('hidden'); 
             document.getElementById('receipt').classList.remove('hidden');
             document.getElementById('wait-time').innerText = wait + " mins";
             confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-            db.ref('orders/'+ref.key).on('value', s => { if(s.val()?.status === 'cancelled') document.getElementById('full-cancel-screen').classList.remove('hidden'); });
+
+            // AUTO-RESTOCK ON CANCEL LOGIC
+            db.ref('orders/'+ref.key).on('value', s => { 
+                const data = s.val();
+                if(data?.status === 'cancelled') {
+                    // Return items to stock
+                    if(data.items_list) {
+                        data.items_list.forEach(itemId => {
+                            db.ref('stock/' + itemId).transaction(curr => (curr || 0) + 1);
+                        });
+                    }
+                    document.getElementById('full-cancel-screen').classList.remove('hidden'); 
+                }
+            });
         }
     </script>
 </body>
