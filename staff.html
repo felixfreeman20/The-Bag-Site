@@ -16,19 +16,31 @@
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        
+        /* DUAL SIDE DECOR */
+        .desktop-decor { position: fixed; top: 50%; transform: translateY(-50%); z-index: 0; pointer-events: none; opacity: 0.05; }
+        .side-text { font-size: 4rem; font-weight: 900; text-transform: uppercase; writing-mode: vertical-rl; letter-spacing: -2px; }
     </style>
 </head>
 <body class="p-6">
+
+    <div class="desktop-decor left-5 hidden xl:block">
+        <h1 class="side-text">THE BAG HQ SYSTEM</h1>
+    </div>
+    <div class="desktop-decor right-5 hidden xl:block">
+        <h1 class="side-text" style="transform: rotate(180deg);">THE BAG HQ SYSTEM</h1>
+    </div>
 
     <div id="lock" class="fixed inset-0 blur-screen bg-slate-900/60 flex items-center justify-center">
         <div class="bg-slate-800 p-10 rounded-[3rem] border border-slate-700 text-center shadow-2xl max-w-sm w-full">
             <h2 class="text-2xl font-black uppercase italic text-blue-500 mb-6">Staff Login</h2>
             <input type="password" id="pass-input" placeholder="PASSWORD" class="w-full bg-slate-900 p-5 rounded-2xl outline-none border border-slate-700 mb-4 text-center font-black tracking-widest text-white">
             <button onclick="checkPass()" class="w-full bg-blue-600 p-5 rounded-2xl font-black uppercase hover:bg-blue-500 transition-all">Unlock Dashboard</button>
+            <p class="text-[9px] mt-4 opacity-30 uppercase font-bold tracking-widest">Encrypted SHA-256 Access</p>
         </div>
     </div>
 
-    <div class="max-w-[1400px] mx-auto">
+    <div class="max-w-[1400px] mx-auto relative z-10">
         <header class="flex justify-between items-center mb-10">
             <div>
                 <h1 class="text-4xl font-black italic uppercase text-blue-500">The Bag HQ.</h1>
@@ -77,20 +89,34 @@
         const firebaseConfig = { apiKey: "AIzaSyAFGoJyyvtspQSauHUrWvSBWNF2taGJOYE", databaseURL: "https://thebagsite-default-rtdb.asia-southeast1.firebasedatabase.app/", projectId: "thebagsite" };
         firebase.initializeApp(firebaseConfig); const db = firebase.database();
 
-        // UPDATED SECURE LOGIN SYSTEM
+        // --- SECURE LOGIN LOGIC ---
         function checkPass() {
-            const input = document.getElementById('pass-input').value;
-            // This is the SHA-256 hash of: DAMNTHEHACKERS444
+            const inputField = document.getElementById('pass-input');
+            const input = inputField.value.trim();
+            // Hash for: DAMNTHEHACKERS444
             const secureHash = "f9a1473216839077920703d9876f272a8069542c38865c34563a453f65759367";
+            
+            if (typeof CryptoJS === 'undefined') {
+                alert("Security library loading... wait 1 second.");
+                return;
+            }
+
             const inputHash = CryptoJS.SHA256(input).toString();
 
             if(inputHash === secureHash) {
                 document.getElementById('lock').style.display = 'none';
             } else { 
-                alert("Unauthorized Access Attempt Detected."); 
+                alert("ACCESS DENIED: Unauthorized Attempt."); 
+                inputField.value = "";
             }
         }
 
+        // Listen for "Enter" key
+        document.getElementById('pass-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') checkPass();
+        });
+
+        // --- SHOP CONTROL ---
         let shopOpen = true;
         db.ref('settings/storeOpen').on('value', snap => {
             shopOpen = snap.val();
@@ -100,32 +126,29 @@
         });
         function toggleShop() { db.ref('settings').update({ storeOpen: !shopOpen }); }
 
+        // --- FLASH SALE ---
         function startFlash() {
             const mins = document.getElementById('flash-mins').value || 10;
             db.ref('settings/flashSale').set({ active: true, end: Date.now() + (mins * 60000) });
         }
-
         function endFlash() {
             db.ref('settings/flashSale').update({ active: false, end: 0 });
             alert("Flash Sale Ended");
         }
 
+        // --- BAN SYSTEM ---
         function copyId(id) {
             navigator.clipboard.writeText(id);
-            alert("ID Copied to Clipboard!");
+            alert("ID Copied!");
         }
-
         async function banUser(deviceId, orderName) {
-            if(confirm(`Are you sure you want to ban ${orderName}?`)) {
+            if(confirm(`Ban ${orderName}?`)) {
                 await db.ref('bannedDevices/' + deviceId).set({ name: orderName, timestamp: Date.now() });
-                alert("Device Blacklisted.");
             }
         }
-
         async function unbanUser(deviceId) {
-            if(confirm(`Remove ban for device: ${deviceId.substring(0,10)}...?`)) {
+            if(confirm(`Unban device?`)) {
                 await db.ref('bannedDevices/' + deviceId).remove();
-                alert("Device Unbanned.");
             }
         }
 
@@ -133,26 +156,25 @@
             const container = document.getElementById('ban-list');
             const bans = snap.val() || {};
             const keys = Object.keys(bans);
-            
             if(keys.length === 0) {
                 container.innerHTML = `<p class="text-[10px] uppercase font-bold opacity-30 text-center py-4">No devices currently banned</p>`;
                 return;
             }
-
             container.innerHTML = "";
             keys.forEach(id => {
                 const bannedName = bans[id].name || "Unknown";
                 container.innerHTML += `
                 <div class="flex items-center justify-between bg-red-950/20 p-3 rounded-xl border border-red-900/30">
                     <div class="flex flex-col truncate pr-2">
-                        <span class="text-[10px] font-black text-red-500 uppercase tracking-tighter">${bannedName}</span>
+                        <span class="text-[10px] font-black text-red-500 uppercase">${bannedName}</span>
                         <span class="text-[8px] font-mono opacity-40 truncate w-32">${id}</span>
                     </div>
-                    <button onclick="unbanUser('${id}')" class="text-[9px] font-black text-red-400 hover:text-white uppercase tracking-widest bg-red-900/40 px-3 py-1 rounded-lg transition-all">Unban</button>
+                    <button onclick="unbanUser('${id}')" class="text-[9px] font-black text-red-400 bg-red-900/40 px-3 py-1 rounded-lg">Unban</button>
                 </div>`;
             });
         });
 
+        // --- ORDER LIST ---
         db.ref('orders').on('value', snap => {
             const list = document.getElementById('order-list');
             list.innerHTML = "";
@@ -164,11 +186,12 @@
                     <div class="panel-card p-6 flex justify-between items-center">
                         <div class="flex-1">
                             <div class="flex gap-2 mb-2">
-                                <button onclick="copyId('${devId}')" class="text-[9px] font-black bg-blue-900/30 text-blue-400 px-3 py-1 rounded-full uppercase hover:bg-blue-400 hover:text-white transition-all">ID</button>
-                                <button onclick="banUser('${devId}', '${orders[id].name}')" class="text-[9px] font-black bg-red-900 text-white px-3 py-1 rounded-full uppercase hover:bg-red-600 transition-all">BAN DEVICE</button>
+                                <button onclick="copyId('${devId}')" class="text-[9px] font-black bg-blue-900/30 text-blue-400 px-3 py-1 rounded-full uppercase">ID</button>
+                                <button onclick="banUser('${devId}', '${orders[id].name}')" class="text-[9px] font-black bg-red-900 text-white px-3 py-1 rounded-full uppercase">BAN</button>
                             </div>
-                            <h3 class="text-2xl font-black italic">${orders[id].name}</h3>
+                            <h3 class="text-2xl font-black italic">${orders[id].name} (${orders[id].grade})</h3>
                             <p class="text-sm font-bold opacity-70">${orders[id].items}</p>
+                            <p class="text-[10px] font-black uppercase text-blue-400 mt-1">${orders[id].location} - ${orders[id].delivery_loc}</p>
                         </div>
                         <div class="flex gap-2">
                             <button onclick="updateStatus('${id}', 'completed')" class="bg-green-600 w-12 h-12 rounded-xl font-black">✓</button>
@@ -194,18 +217,17 @@
             db.ref('orders/' + orderId).update({ status: s }); 
         }
 
+        // --- STOCK CONTROL ---
         const items = ['squid_l_red', 'squid_l_orange', 'squid_g', 'squid_o', 'squid_r', 'doritos', 'pocky', 'oreo', 'lays_s', 'lays_n', 'gummy', 'gum'];
-        
         db.ref('stock').on('value', snap => {
             const data = snap.val() || {};
             const list = document.getElementById('stock-list');
             list.innerHTML = "";
             items.forEach(id => {
                 const count = data[id] || 0;
-                const isOut = count <= 0;
                 list.innerHTML += `
                 <div class="flex items-center justify-between bg-slate-900/40 p-3 rounded-xl">
-                    <span class="font-bold text-[10px] uppercase ${isOut ? 'text-red-500 opacity-100' : 'opacity-70'}">${id} ${isOut ? '(OUT)' : ''}</span>
+                    <span class="font-bold text-[10px] uppercase ${count <= 0 ? 'text-red-500' : 'opacity-70'}">${id}</span>
                     <div class="flex items-center gap-3">
                         <button onclick="quickAdjust('${id}', -1)" class="w-8 h-8 rounded-lg bg-slate-800 font-black text-red-500">-</button>
                         <input type="number" id="manual-${id}" placeholder="${count}" class="w-12 bg-transparent text-center font-black text-blue-500 outline-none">
@@ -216,25 +238,19 @@
         });
 
         function quickAdjust(id, amt) {
-            db.ref('stock/'+id).transaction(current => {
-                return Math.max(0, (current || 0) + amt);
-            });
+            db.ref('stock/'+id).transaction(current => Math.max(0, (current || 0) + amt));
         }
 
         function updateAllStock() {
             const updates = {};
             items.forEach(id => {
                 const input = document.getElementById(`manual-${id}`);
-                const val = input.value;
-                if(val !== "") {
-                    updates[id] = parseInt(val);
+                if(input.value !== "") {
+                    updates[id] = parseInt(input.value);
                     input.value = ""; 
                 }
             });
-            if (Object.keys(updates).length > 0) {
-                db.ref('stock').update(updates);
-                alert("Stock Updated!");
-            }
+            if (Object.keys(updates).length > 0) db.ref('stock').update(updates);
         }
     </script>
 </body>
