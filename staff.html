@@ -6,29 +6,29 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; background: #020617; color: white; overflow-x: hidden; }
         .blur-screen { backdrop-filter: blur(60px); -webkit-backdrop-filter: blur(60px); z-index: 1000; }
-        .panel-card { background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 2rem; }
+        .panel-card { background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 2rem; position: relative; z-index: 10; }
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
-        
-        /* DUAL SIDE DECOR */
-        .desktop-decor { position: fixed; top: 50%; transform: translateY(-50%); z-index: 0; pointer-events: none; opacity: 0.05; }
-        .side-text { font-size: 4rem; font-weight: 900; text-transform: uppercase; writing-mode: vertical-rl; letter-spacing: -2px; }
+
+        /* SIDE DECOR - Smaller and Transparent */
+        .desktop-decor { position: fixed; top: 50%; transform: translateY(-50%); z-index: 0; pointer-events: none; opacity: 0.03; display: none; }
+        @media (min-width: 1400px) { .desktop-decor { display: block; } }
+        .side-text { font-size: 5rem; font-weight: 900; text-transform: uppercase; writing-mode: vertical-rl; letter-spacing: -2px; }
     </style>
 </head>
 <body class="p-6">
 
-    <div class="desktop-decor left-5 hidden xl:block">
-        <h1 class="side-text">THE BAG HQ SYSTEM</h1>
+    <div class="desktop-decor left-10">
+        <h1 class="side-text">THE BAG HQ</h1>
     </div>
-    <div class="desktop-decor right-5 hidden xl:block">
-        <h1 class="side-text" style="transform: rotate(180deg);">THE BAG HQ SYSTEM</h1>
+    <div class="desktop-decor right-10">
+        <h1 class="side-text" style="transform: rotate(180deg);">THE BAG HQ</h1>
     </div>
 
     <div id="lock" class="fixed inset-0 blur-screen bg-slate-900/60 flex items-center justify-center">
@@ -36,7 +36,6 @@
             <h2 class="text-2xl font-black uppercase italic text-blue-500 mb-6">Staff Login</h2>
             <input type="password" id="pass-input" placeholder="PASSWORD" class="w-full bg-slate-900 p-5 rounded-2xl outline-none border border-slate-700 mb-4 text-center font-black tracking-widest text-white">
             <button onclick="checkPass()" class="w-full bg-blue-600 p-5 rounded-2xl font-black uppercase hover:bg-blue-500 transition-all">Unlock Dashboard</button>
-            <p class="text-[9px] mt-4 opacity-30 uppercase font-bold tracking-widest">Encrypted SHA-256 Access</p>
         </div>
     </div>
 
@@ -62,7 +61,7 @@
                     <h2 class="text-xl font-black uppercase italic text-red-500 mb-4">Flash Sale</h2>
                     <div class="flex flex-col gap-3">
                         <div class="flex gap-4">
-                            <input type="number" id="flash-mins" placeholder="Mins" class="w-24 bg-slate-900 p-4 rounded-xl font-bold border border-slate-700">
+                            <input type="number" id="flash-mins" placeholder="Mins" class="w-24 bg-slate-900 p-4 rounded-xl font-bold border border-slate-700 text-white">
                             <button onclick="startFlash()" class="flex-1 bg-red-600 p-4 rounded-xl font-black uppercase text-xs">Start Sale</button>
                         </div>
                         <button onclick="endFlash()" class="w-full bg-slate-700 p-3 rounded-xl font-black uppercase text-[10px] opacity-70 hover:opacity-100 transition-all">End Flash Sale</button>
@@ -89,34 +88,22 @@
         const firebaseConfig = { apiKey: "AIzaSyAFGoJyyvtspQSauHUrWvSBWNF2taGJOYE", databaseURL: "https://thebagsite-default-rtdb.asia-southeast1.firebasedatabase.app/", projectId: "thebagsite" };
         firebase.initializeApp(firebaseConfig); const db = firebase.database();
 
-        // --- SECURE LOGIN LOGIC ---
+        // PLAIN TEXT LOGIN
         function checkPass() {
-            const inputField = document.getElementById('pass-input');
-            const input = inputField.value.trim();
-            // Hash for: DAMNTHEHACKERS444
-            const secureHash = "f9a1473216839077920703d9876f272a8069542c38865c34563a453f65759367";
-            
-            if (typeof CryptoJS === 'undefined') {
-                alert("Security library loading... wait 1 second.");
-                return;
-            }
-
-            const inputHash = CryptoJS.SHA256(input).toString();
-
-            if(inputHash === secureHash) {
+            const input = document.getElementById('pass-input').value.trim();
+            if(input === "MONEYTIME10") {
                 document.getElementById('lock').style.display = 'none';
             } else { 
-                alert("ACCESS DENIED: Unauthorized Attempt."); 
-                inputField.value = "";
+                alert("Access Denied"); 
             }
         }
 
-        // Listen for "Enter" key
+        // Allow Enter key
         document.getElementById('pass-input').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') checkPass();
         });
 
-        // --- SHOP CONTROL ---
+        // SHOP TOGGLE
         let shopOpen = true;
         db.ref('settings/storeOpen').on('value', snap => {
             shopOpen = snap.val();
@@ -126,30 +113,22 @@
         });
         function toggleShop() { db.ref('settings').update({ storeOpen: !shopOpen }); }
 
-        // --- FLASH SALE ---
+        // FLASH SALE
         function startFlash() {
             const mins = document.getElementById('flash-mins').value || 10;
             db.ref('settings/flashSale').set({ active: true, end: Date.now() + (mins * 60000) });
         }
-        function endFlash() {
-            db.ref('settings/flashSale').update({ active: false, end: 0 });
-            alert("Flash Sale Ended");
-        }
+        function endFlash() { db.ref('settings/flashSale').update({ active: false, end: 0 }); }
 
-        // --- BAN SYSTEM ---
-        function copyId(id) {
-            navigator.clipboard.writeText(id);
-            alert("ID Copied!");
-        }
+        // BANNING
+        function copyId(id) { navigator.clipboard.writeText(id); alert("ID Copied!"); }
         async function banUser(deviceId, orderName) {
             if(confirm(`Ban ${orderName}?`)) {
                 await db.ref('bannedDevices/' + deviceId).set({ name: orderName, timestamp: Date.now() });
             }
         }
         async function unbanUser(deviceId) {
-            if(confirm(`Unban device?`)) {
-                await db.ref('bannedDevices/' + deviceId).remove();
-            }
+            if(confirm(`Unban device?`)) { await db.ref('bannedDevices/' + deviceId).remove(); }
         }
 
         db.ref('bannedDevices').on('value', snap => {
@@ -162,19 +141,15 @@
             }
             container.innerHTML = "";
             keys.forEach(id => {
-                const bannedName = bans[id].name || "Unknown";
                 container.innerHTML += `
                 <div class="flex items-center justify-between bg-red-950/20 p-3 rounded-xl border border-red-900/30">
-                    <div class="flex flex-col truncate pr-2">
-                        <span class="text-[10px] font-black text-red-500 uppercase">${bannedName}</span>
-                        <span class="text-[8px] font-mono opacity-40 truncate w-32">${id}</span>
-                    </div>
+                    <span class="text-[10px] font-black text-red-500 uppercase">${bans[id].name || 'Unknown'}</span>
                     <button onclick="unbanUser('${id}')" class="text-[9px] font-black text-red-400 bg-red-900/40 px-3 py-1 rounded-lg">Unban</button>
                 </div>`;
             });
         });
 
-        // --- ORDER LIST ---
+        // ORDERS
         db.ref('orders').on('value', snap => {
             const list = document.getElementById('order-list');
             list.innerHTML = "";
@@ -189,7 +164,7 @@
                                 <button onclick="copyId('${devId}')" class="text-[9px] font-black bg-blue-900/30 text-blue-400 px-3 py-1 rounded-full uppercase">ID</button>
                                 <button onclick="banUser('${devId}', '${orders[id].name}')" class="text-[9px] font-black bg-red-900 text-white px-3 py-1 rounded-full uppercase">BAN</button>
                             </div>
-                            <h3 class="text-2xl font-black italic">${orders[id].name} (${orders[id].grade})</h3>
+                            <h3 class="text-2xl font-black italic">${orders[id].name}</h3>
                             <p class="text-sm font-bold opacity-70">${orders[id].items}</p>
                             <p class="text-[10px] font-black uppercase text-blue-400 mt-1">${orders[id].location} - ${orders[id].delivery_loc}</p>
                         </div>
@@ -208,8 +183,7 @@
                 const orderData = snap.val();
                 if(orderData && orderData.items_ordered && !orderData.restocked) {
                     Object.keys(orderData.items_ordered).forEach(itemId => {
-                        const qty = orderData.items_ordered[itemId];
-                        db.ref('stock/' + itemId).transaction(curr => (curr || 0) + qty);
+                        db.ref('stock/' + itemId).transaction(curr => (curr || 0) + orderData.items_ordered[itemId]);
                     });
                     db.ref('orders/' + orderId).update({ restocked: true });
                 }
@@ -217,7 +191,7 @@
             db.ref('orders/' + orderId).update({ status: s }); 
         }
 
-        // --- STOCK CONTROL ---
+        // STOCK
         const items = ['squid_l_red', 'squid_l_orange', 'squid_g', 'squid_o', 'squid_r', 'doritos', 'pocky', 'oreo', 'lays_s', 'lays_n', 'gummy', 'gum'];
         db.ref('stock').on('value', snap => {
             const data = snap.val() || {};
@@ -245,10 +219,7 @@
             const updates = {};
             items.forEach(id => {
                 const input = document.getElementById(`manual-${id}`);
-                if(input.value !== "") {
-                    updates[id] = parseInt(input.value);
-                    input.value = ""; 
-                }
+                if(input.value !== "") { updates[id] = parseInt(input.value); input.value = ""; }
             });
             if (Object.keys(updates).length > 0) db.ref('stock').update(updates);
         }
