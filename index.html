@@ -37,6 +37,28 @@
         <p class="text-slate-400 font-bold mt-4 uppercase tracking-widest">We are currently restockin' or takin' a break.</p>
     </div>
 
+    <div id="rules-screen" class="fixed inset-0 bg-slate-900/90 hidden flex flex-col items-center justify-center z-[6000] p-6 backdrop-blur-md">
+        <div class="bg-card w-full max-w-sm rounded-[3rem] p-8 shadow-2xl text-center">
+            <h2 class="text-2xl font-black italic mb-6" style="color:var(--accent)">BEFORE YOU SECURE...</h2>
+            <div class="space-y-6 text-left mb-8">
+                <div class="flex gap-4 items-start">
+                    <span class="text-2xl">💵</span>
+                    <div><p class="font-black text-sm uppercase">Cash Only</p><p class="text-xs opacity-60 font-bold">Please have your cash ready for the team.</p></div>
+                </div>
+                <div class="flex gap-4 items-start">
+                    <span class="text-2xl">🚫</span>
+                    <div><p class="font-black text-sm uppercase">No Class Orders</p><p class="text-xs opacity-60 font-bold">Do not order while in a lesson. Wait for break!</p></div>
+                </div>
+                <div class="flex gap-4 items-start">
+                    <span class="text-2xl">🎟️</span>
+                    <div><p class="font-black text-sm uppercase">Promo Codes</p><p class="text-xs opacity-60 font-bold">Promo system is coming soon. Stay tuned.</p></div>
+                </div>
+            </div>
+            <button onclick="finalizeOrder(); playPop()" class="w-full py-5 rounded-2xl font-black uppercase text-sm text-white shadow-lg mb-3" style="background:var(--accent)">I Agree, Place Order</button>
+            <button onclick="document.getElementById('rules-screen').classList.add('hidden')" class="text-[10px] font-black opacity-40 uppercase tracking-widest">Wait, go back</button>
+        </div>
+    </div>
+
     <div id="full-cancel-screen" class="fixed inset-0 bg-slate-950 hidden flex flex-col items-center justify-center text-center z-[5000] p-10">
         <div class="w-20 h-20 border-4 border-red-500/30 rounded-full flex items-center justify-center mb-6">
             <span class="text-red-500 text-4xl font-black">!</span>
@@ -259,6 +281,16 @@
             
             if(!n || itemsInCart.length === 0) return alert("Add items and name!");
             if(method === 'Delivery' && !loc) return alert("Please enter your delivery location!");
+            
+            // Show rules before final submission
+            document.getElementById('rules-screen').classList.remove('hidden');
+        }
+
+        async function finalizeOrder() {
+            document.getElementById('rules-screen').classList.add('hidden');
+            const n = document.getElementById('cust-name').value;
+            const loc = document.getElementById('cust-loc').value;
+            const itemsInCart = Object.keys(cart).filter(k=>cart[k]>0);
 
             const snap = await db.ref('orders').once('value');
             const active = Object.values(snap.val() || {}).filter(o => o.status === 'active').length;
@@ -287,11 +319,9 @@
             document.getElementById('wait-time').innerText = wait + " mins";
             confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
 
-            // AUTO-RESTOCK ON CANCEL LOGIC
             db.ref('orders/'+ref.key).on('value', s => { 
                 const data = s.val();
                 if(data?.status === 'cancelled') {
-                    // Return items to stock
                     if(data.items_list) {
                         data.items_list.forEach(itemId => {
                             db.ref('stock/' + itemId).transaction(curr => (curr || 0) + 1);
