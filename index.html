@@ -212,7 +212,15 @@
             if(isFlash) { 
                 const updateTimer = () => {
                     const diff = data.end - Date.now();
-                    if(diff <= 0) { clearInterval(flashInterval); document.getElementById('flash-timer-box').classList.add('hidden'); return; }
+                    if(diff <= 0) { 
+                        clearInterval(flashInterval); 
+                        isFlash = false; // Reset flash state
+                        document.body.classList.remove('flash-active'); // Revert UI color
+                        document.getElementById('flash-timer-box').classList.add('hidden'); 
+                        document.getElementById('total-sale-tag').classList.add('hidden');
+                        renderInventory(); updateCartDisplay(); // Refresh prices
+                        return; 
+                    }
                     const m = Math.floor(diff/60000), s = Math.floor((diff%60000)/1000);
                     document.getElementById('timer-display').innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
                 };
