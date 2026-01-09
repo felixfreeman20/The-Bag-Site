@@ -174,13 +174,17 @@
         // PASTE TROLL IDs IN THIS LIST
         const bannedDevices = ["TW96aWxsYS81LjAgKFgxMTsgTGludXggeDg2XzY0KSBBcHBsZVdlYktpdC81MzcuMzYgKEtIVE1MLCBsaWtlIEdlY2tvKSBDaHJvbWUvMTQzLjAuMC4wIFNhZmFyaS81MzcuMzYtMTEzOHg3MTItZW4tVVM="]; 
 
+        // CHECK BAN IMMEDIATELY
         if (bannedDevices.includes(deviceId)) {
+            // Wait for DOM to be ready then show banned screen
+            window.addEventListener('DOMContentLoaded', () => {
+                document.body.innerHTML = `
+                <div id="banned-screen" class="fixed inset-0 bg-red-950 flex flex-col items-center justify-center text-center p-10 z-[10000]">
+                    <h1 class="text-white text-6xl font-black italic uppercase">BANNED</h1>
+                    <p class="text-slate-400 font-bold mt-4 uppercase tracking-widest">Device blacklisted for trolling.</p>
+                </div>`;
+            });
             window.stop();
-            document.body.innerHTML = ""; 
-            setTimeout(() => {
-                document.body.innerHTML = document.getElementById('banned-screen').outerHTML;
-                document.getElementById('banned-screen').classList.remove('hidden');
-            }, 100);
         }
 
         const firebaseConfig = { apiKey: "AIzaSyAFGoJyyvtspQSauHUrWvSBWNF2taGJOYE", databaseURL: "https://thebagsite-default-rtdb.asia-southeast1.firebasedatabase.app/", projectId: "thebagsite" };
@@ -333,8 +337,11 @@
             const wait = (active * 3) + 5;
             const itemsListForBestSeller = [];
             
+            // Subtract stock and store the counts for cancellation
+            const itemsOrderedObject = {}; 
             itemsInCart.forEach(id => {
                 const qty = cart[id];
+                itemsOrderedObject[id] = qty; 
                 for(let i=0; i<qty; i++) itemsListForBestSeller.push(id);
                 db.ref('stock/'+id).transaction(current => (current || 0) - qty);
             });
@@ -343,9 +350,10 @@
                 name: n, grade: document.getElementById('cust-grade').value, 
                 items: itemsInCart.map(k=>`${itemsData[k].name} x${cart[k]}`).join(', '),
                 items_list: itemsListForBestSeller,
+                items_ordered: itemsOrderedObject, 
                 status: 'active', timestamp: Date.now(), location: method,
                 delivery_loc: method === 'Delivery' ? loc : 'Pickup Spot',
-                deviceId: deviceId // LOGGING THE ID FOR BANNING
+                deviceId: deviceId 
             };
 
             const ref = await db.ref('orders').push(orderData);
@@ -358,6 +366,13 @@
             db.ref('orders/'+ref.key).on('value', s => { 
                 const data = s.val();
                 if(data?.status === 'cancelled') {
+                    // AUTO RESTOCK ON CANCEL
+                    if(data.items_ordered && !data.restocked) {
+                        Object.keys(data.items_ordered).forEach(itemId => {
+                            db.ref('stock/'+itemId).transaction(curr => (curr || 0) + data.items_ordered[itemId]);
+                        });
+                        db.ref('orders/'+ref.key).update({ restocked: true });
+                    }
                     document.getElementById('full-cancel-screen').classList.remove('hidden'); 
                 }
             });
