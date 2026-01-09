@@ -12,6 +12,9 @@
         .blur-screen { backdrop-filter: blur(60px); -webkit-backdrop-filter: blur(60px); z-index: 1000; }
         .panel-card { background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 2rem; }
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
     </style>
 </head>
 <body class="p-6">
@@ -58,6 +61,13 @@
                     <div id="stock-list" class="space-y-3"></div>
                     <button onclick="updateAllStock()" class="w-full mt-6 bg-blue-600 p-4 rounded-2xl font-black uppercase text-sm">Update Stock</button>
                 </div>
+
+                <div class="panel-card p-8 border-t-4 border-red-900/50">
+                    <h2 class="text-xl font-black uppercase italic text-slate-400 mb-6">Blacklisted Devices</h2>
+                    <div id="ban-list" class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-2">
+                        <p class="text-[10px] uppercase font-bold opacity-30 text-center py-4">No devices currently banned</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -102,6 +112,34 @@
                 alert("Device Blacklisted.");
             }
         }
+
+        async function unbanUser(deviceId) {
+            if(confirm(`Remove ban for device: ${deviceId.substring(0,10)}...?`)) {
+                await db.ref('bannedDevices/' + deviceId).remove();
+                alert("Device Unbanned.");
+            }
+        }
+
+        // Listen for banned devices and update the list
+        db.ref('bannedDevices').on('value', snap => {
+            const container = document.getElementById('ban-list');
+            const bans = snap.val() || {};
+            const keys = Object.keys(bans);
+            
+            if(keys.length === 0) {
+                container.innerHTML = `<p class="text-[10px] uppercase font-bold opacity-30 text-center py-4">No devices currently banned</p>`;
+                return;
+            }
+
+            container.innerHTML = "";
+            keys.forEach(id => {
+                container.innerHTML += `
+                <div class="flex items-center justify-between bg-red-950/20 p-3 rounded-xl border border-red-900/30">
+                    <span class="text-[9px] font-mono opacity-60 truncate w-32">${id}</span>
+                    <button onclick="unbanUser('${id}')" class="text-[9px] font-black text-red-400 hover:text-white uppercase tracking-widest bg-red-900/40 px-3 py-1 rounded-lg transition-all">Unban</button>
+                </div>`;
+            });
+        });
 
         db.ref('orders').on('value', snap => {
             const list = document.getElementById('order-list');
