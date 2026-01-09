@@ -29,9 +29,20 @@
         .pop-btn:active { transform: scale(0.95); }
         
         #closed-screen, #banned-screen, #security-screen { z-index: 9999; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+
+        /* NUMBER 2: DESKTOP DECOR STYLES */
+        @media (min-width: 1280px) {
+            .desktop-decor { display: block !important; }
+        }
+        .desktop-decor { display: none; position: fixed; top: 50%; transform: translateY(-50%); z-index: 0; pointer-events: none; }
+        .side-text { font-size: 8rem; font-weight: 900; opacity: 0.05; text-transform: uppercase; writing-mode: vertical-rl; }
     </style>
 </head>
 <body class="pb-64">
+    <div class="desktop-decor right-10">
+        <h1 class="side-text select-none">THE BAG SUPPLY</h1>
+    </div>
+
     <div id="security-screen" class="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center text-center p-10">
         <div class="mb-6 w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center">
             <span class="text-3xl">🔒</span>
