@@ -163,32 +163,38 @@
     <audio id="pop-sfx" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3" preload="auto"></audio>
 
     <script>
-        // BAN SYSTEM CONFIG
+        const firebaseConfig = { apiKey: "AIzaSyAFGoJyyvtspQSauHUrWvSBWNF2taGJOYE", databaseURL: "https://thebagsite-default-rtdb.asia-southeast1.firebasedatabase.app/", projectId: "thebagsite" };
+        firebase.initializeApp(firebaseConfig); const db = firebase.database();
+
+        // BAN SYSTEM LOGIC
         const getDeviceId = () => {
             const nav = window.navigator;
             const screen = window.screen;
             return btoa(`${nav.userAgent}-${screen.width}x${screen.height}-${nav.language}`);
         };
         const deviceId = getDeviceId();
-        
-        // PASTE TROLL IDs IN THIS LIST
-        const bannedDevices = ["TW96aWxsYS81LjAgKFgxMTsgTGludXggeDg2XzY0KSBBcHBsZVdlYktpdC81MzcuMzYgKEtIVE1MLCBsaWtlIEdlY2tvKSBDaHJvbWUvMTQzLjAuMC4wIFNhZmFyaS81MzcuMzYtMTEzOHg3MTItZW4tVVM="]; 
+        const bannedDevicesLocal = ["TW96aWxsYS81LjAgKFgxMTsgTGludXggeDg2XzY0KSBBcHBsZVdlYktpdC81MzcuMzYgKEtIVE1MLCBsaWtlIEdlY2tvKSBDaHJvbWUvMTQzLjAuMC4wIFNhZmFyaS81MzcuMzYtMTEzOHg3MTItZW4tVVM="]; 
 
-        // CHECK BAN IMMEDIATELY
-        if (bannedDevices.includes(deviceId)) {
-            window.addEventListener('DOMContentLoaded', () => {
-                document.body.innerHTML = `
-                <div id="banned-screen" class="fixed inset-0 bg-red-950 flex flex-col items-center justify-center text-center p-10 z-[10000]">
-                    <h1 class="text-white text-6xl font-black italic uppercase">BANNED</h1>
-                    <p class="text-slate-400 font-bold mt-4 uppercase tracking-widest">Device blacklisted for trolling.</p>
-                </div>`;
-            });
+        function applyBan() {
             window.stop();
+            document.body.innerHTML = `
+            <div id="banned-screen" class="fixed inset-0 bg-red-950 flex flex-col items-center justify-center text-center p-10 z-[10000]">
+                <h1 class="text-white text-6xl font-black italic uppercase">BANNED</h1>
+                <p class="text-slate-400 font-bold mt-4 uppercase tracking-widest">Device blacklisted for trolling.</p>
+            </div>`;
         }
 
-        const firebaseConfig = { apiKey: "AIzaSyAFGoJyyvtspQSauHUrWvSBWNF2taGJOYE", databaseURL: "https://thebagsite-default-rtdb.asia-southeast1.firebasedatabase.app/", projectId: "thebagsite" };
-        firebase.initializeApp(firebaseConfig); const db = firebase.database();
-        
+        if (bannedDevicesLocal.includes(deviceId)) {
+            applyBan();
+        }
+
+        // Live check for remote bans from Staff Panel
+        db.ref('bannedDevices/' + deviceId).on('value', snap => {
+            if (snap.val() === true) {
+                applyBan();
+            }
+        });
+
         let cart = {}, stock = {}, isFlash = false, method = "Pickup", bestSellerId = "";
         let flashInterval = null;
 
