@@ -138,9 +138,15 @@
             </div>
             
             <div class="px-8">
-                <div class="p-10 bg-slate-500/5 rounded-[3rem] mb-8 border border-slate-500/10">
-                    <p class="text-[11px] font-black uppercase opacity-40 tracking-[0.2em] mb-2">Estimated Arrival</p>
-                    <p id="wait-time" class="text-7xl font-black italic tracking-tighter" style="color:var(--accent)">-- mins</p>
+                <div class="grid grid-cols-2 gap-4 mb-8">
+                    <div class="p-8 bg-slate-500/5 rounded-[2.5rem] border border-slate-500/10">
+                        <p class="text-[9px] font-black uppercase opacity-40 tracking-[0.2em] mb-1">Arrival</p>
+                        <p id="wait-time" class="text-3xl font-black italic tracking-tighter" style="color:var(--accent)">-- mins</p>
+                    </div>
+                    <div class="p-8 bg-slate-500/5 rounded-[2.5rem] border border-slate-500/10">
+                        <p class="text-[9px] font-black uppercase opacity-40 tracking-[0.2em] mb-1">Total Due</p>
+                        <p id="final-cost" class="text-3xl font-black italic tracking-tighter" style="color:var(--accent)">0 THB</p>
+                    </div>
                 </div>
 
                 <div class="space-y-4 text-left bg-slate-500/5 p-8 rounded-[2.5rem] border border-slate-500/10 mb-8">
@@ -177,7 +183,6 @@
         const firebaseConfig = { apiKey: "AIzaSyAFGoJyyvtspQSauHUrWvSBWNF2taGJOYE", databaseURL: "https://thebagsite-default-rtdb.asia-southeast1.firebasedatabase.app/", projectId: "thebagsite" };
         firebase.initializeApp(firebaseConfig); const db = firebase.database();
 
-        // BAN SYSTEM LOGIC
         const getDeviceId = () => {
             const nav = window.navigator;
             const screen = window.screen;
@@ -350,6 +355,10 @@
             const loc = document.getElementById('cust-loc').value;
             const itemsInCart = Object.keys(cart).filter(k=>cart[k]>0);
 
+            // Calculate final cost for display
+            let finalCost = (method === "Delivery" ? 15 : 0);
+            itemsInCart.forEach(k => finalCost += (cart[k] || 0) * (isFlash ? Math.floor(itemsData[k].price * 0.9) : itemsData[k].price));
+
             const snap = await db.ref('orders').once('value');
             const active = Object.values(snap.val() || {}).filter(o => o.status === 'active').length;
             const wait = (active * 3) + 5;
@@ -370,7 +379,8 @@
                 items_ordered: itemsOrderedObject, 
                 status: 'active', timestamp: Date.now(), location: method,
                 delivery_loc: method === 'Delivery' ? loc : 'Pickup Spot',
-                deviceId: deviceId 
+                deviceId: deviceId,
+                total: finalCost
             };
 
             const ref = await db.ref('orders').push(orderData);
@@ -378,6 +388,7 @@
             document.getElementById('bottom-bar').classList.add('hidden'); 
             document.getElementById('receipt').classList.remove('hidden');
             document.getElementById('wait-time').innerText = wait + " mins";
+            document.getElementById('final-cost').innerText = finalCost + " THB";
             confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
 
             db.ref('orders/'+ref.key).on('value', s => { 
